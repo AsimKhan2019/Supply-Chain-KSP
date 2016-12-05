@@ -10,6 +10,8 @@ namespace SupplyChain
     {
         public Dictionary<int, double> resourcesRequired;
         public double timeRequired;
+        public double maxMass;
+
         public Vessel linkVessel;
 
         public SupplyPoint from;
@@ -28,6 +30,7 @@ namespace SupplyChain
             this.linkVessel = v;
             this.linkVesselID = v.id;
             this.timeRequired = 0;
+            this.maxMass = 0;
             this.resourcesRequired = new Dictionary<int, double>();
         }
 
@@ -40,6 +43,12 @@ namespace SupplyChain
             {
                 if (!linkVessel.loaded)
                     linkVessel.Load();
+
+                if (linkVessel.totalMass > maxMass)
+                {
+                    Debug.Log("[SupplyChain] Vessel too massive for link!");
+                    return false;
+                }
 
                 /* Check resources. */
                 foreach (int rsc in resourcesRequired.Keys)
@@ -137,6 +146,7 @@ namespace SupplyChain
             from = SupplyChainController.getPointByGuid(new Guid(node.GetValue("from")));
             to = SupplyChainController.getPointByGuid(new Guid(node.GetValue("to")));
             node.TryGetValue("timeRequired", ref timeRequired);
+            node.TryGetValue("maxMass", ref maxMass);
 
             /* Load linked vessel. */
             linkVesselID = new Guid(node.GetValue("linkVessel"));
@@ -175,6 +185,7 @@ namespace SupplyChain
 
             Debug.Log("[SupplyChain] Saving requirements.");
             node.AddValue("timeRequired", timeRequired);
+            node.AddValue("maxMass", maxMass);
             if (resourcesRequired != null)
             {
                 foreach (int rsc in resourcesRequired.Keys)

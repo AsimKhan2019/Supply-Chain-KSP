@@ -98,10 +98,6 @@ namespace SupplyChain
             windowShown = false;
         }
 
-
-
-
-
         public override void OnSave(ConfigNode node)
         {
             if (points == null)

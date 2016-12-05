@@ -16,6 +16,7 @@ namespace SupplyChain
         bool currentlyTrackingFlight = false;
         Dictionary<int, double> flightStartingResources;
         double flightStartingMET;
+        double flightStartingMass;
         SupplyPoint flightStartPoint;
 
         /***
@@ -127,6 +128,8 @@ namespace SupplyChain
                 flightStartingResources.Add(r, vesselResourceAmounts[r]);
             }
             flightStartingMET = vessel.missionTime;
+            flightStartingMass = vessel.totalMass;
+            Debug.Log("[SupplyPoint] Vessel mass: " + Convert.ToString(vessel.totalMass));
             currentlyTrackingFlight = true;
 
             Debug.Log("[SupplyPoint] Changing event states.");
@@ -174,13 +177,15 @@ namespace SupplyChain
 
                 SupplyLink result = new SupplyLink(vessel, flightStartPoint, to);
                 result.timeRequired = (vessel.missionTime - flightStartingMET);
+                result.maxMass = flightStartingMass;
 
                 Debug.Log("[SupplyChain] Creating new supply link.");
                 Debug.Log("[SupplyChain] From: " + result.from.name);
                 Debug.Log("[SupplyChain] To: " + result.to.name);
                 Debug.Log("[SupplyChain] Total Elapsed MET: " + Convert.ToString(result.timeRequired));
+                Debug.Log("[SupplyChain] Maximum mass: " + Convert.ToString(result.maxMass));
 
-                foreach(int rsc in flightStartingResources.Keys)
+                foreach (int rsc in flightStartingResources.Keys)
                 {
                     if(vesselResourceAmounts[rsc] < flightStartingResources[rsc])
                     {
