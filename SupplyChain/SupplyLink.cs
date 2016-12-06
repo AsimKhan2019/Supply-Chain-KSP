@@ -12,7 +12,28 @@ namespace SupplyChain
         public double timeRequired;
         public double maxMass;
 
-        public Vessel linkVessel;
+        private Vessel v = null;
+        private bool resolved = false;
+
+        public Vessel linkVessel
+        {
+            get
+            {
+                if(v == null && !resolved)
+                {
+                    resolveVessel(false);
+                }
+
+                return v;
+            }
+
+            set
+            {
+                v = value;
+                linkVesselID = v.id;
+                resolved = true;
+            }
+        }
 
         public SupplyPoint from;
         public SupplyPoint to;
@@ -36,9 +57,6 @@ namespace SupplyChain
 
         public bool canTraverseLink()
         {
-            if (linkVessel == null)
-                this.resolveVessel(true);
-
             if(from.isVesselAtPoint(linkVessel))
             {
                 if (!linkVessel.loaded)
@@ -212,6 +230,8 @@ namespace SupplyChain
                     break;
                 }
             }
+
+            resolved = true;
 
             if (linkVessel == null)
             {
