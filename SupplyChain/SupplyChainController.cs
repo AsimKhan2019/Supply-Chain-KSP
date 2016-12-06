@@ -12,7 +12,7 @@ namespace SupplyChain
     {
         public static List<SupplyPoint> points;
         public static List<SupplyLink> links;
-        public static ApplicationLauncherButton button;
+        public static Dictionary<SupplyPoint, List<Vessel>> vesselsAtPoint;
         public static bool windowShown = false;
         Texture tex;
 
@@ -23,79 +23,32 @@ namespace SupplyChain
 
             if(links == null)
                 links = new List<SupplyLink>();
-
-            
-            GameEvents.onGUIApplicationLauncherReady.Add(CreateLauncherButton);
-            GameEvents.onGUIApplicationLauncherUnreadifying.Add(DestroyLauncherButton);
         }
 
-
-        public void CreateLauncherButton()
+        public void updateVesselsAtPoint()
         {
-            if(button == null)
+            vesselsAtPoint.Clear();
+
+            foreach(Vessel v in FlightGlobals.Vessels)
             {
-                tex = new Texture();
-                button = ApplicationLauncher.Instance.AddModApplication(showWindow, hideWindow, null, null, null, null, ApplicationLauncher.AppScenes.SPACECENTER | ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.TRACKSTATION, tex);
-            }
-        }
-
-        public void DestroyLauncherButton()
-        {
-            if(button != null)
-            {
-                ApplicationLauncher.Instance.RemoveModApplication(button);
-                button = null;
-            }
-        }
-
-        public void DestroyLauncherButton(GameScenes something)
-        {
-            ApplicationLauncher.Instance.RemoveModApplication(button);
-        }
-
-        private void windowFunc(int id)
-        {
-            GUILayout.BeginVertical();
-
-            foreach(SupplyLink link in links)
-            {
-                Debug.Log("[SupplyChain] Testing link: " + link.from.name + " -> " + link.to.name);
-                if(link.canTraverseLink())
+                foreach(SupplyPoint p in points)
                 {
-                    Debug.Log("[SupplyChain] Vessel " + link.linkVessel.name + " can traverse link!");
-                    if(GUILayout.Button(link.from.name + " -> " + link.to.name))
+                    if(p.isVesselAtPoint(v))
                     {
-                        link.traverseLink();
+                        if (!vesselsAtPoint.ContainsKey(p))
+                        {
+                            vesselsAtPoint.Add(p, new List<Vessel>());
+                        }
+                        vesselsAtPoint[p].Add(v);
+                        break;
                     }
-                } else
-                {
-                    Debug.Log("[SupplyChain] Vessel " + link.linkVessel.name + " cannot traverse link.");
                 }
             }
-
-            GUILayout.EndVertical();
-
-            GUI.DragWindow();
         }
 
-        private Rect windowPos = new Rect(0, 0, 500, 300);
-
-        public void OnGUI()
+        public void FixedUpdate()
         {
-            if(windowShown)
-            {
-                GUI.Window(0, windowPos, windowFunc, "Supply Chain");
-            }
-        }
-
-        public void showWindow()
-        {
-            windowShown = true;
-        }
-
-        public void hideWindow()
-        {
-            windowShown = false;
+            updateVesselsAtPoint();
         }
 
         public override void OnSave(ConfigNode node)
@@ -174,14 +127,14 @@ namespace SupplyChain
         public static bool registerNewSupplyPoint(SupplyPoint point)
         {
             points.Add(point);
-            Debug.Log("[SupplyChain] Registered new supply point: " + point.friendlyName());
+            Debug.Log("[SupplyChain] Registered new supply point: " + point.name);
 
             return true; // TODO: maybe check for redundant points?
         }
 
         public static bool deregisterNewSupplyPoint(SupplyPoint point)
         {
-            Debug.Log("[SupplyChain] Unregistered supply point: " + point.friendlyName());
+            Debug.Log("[SupplyChain] Unregistered supply point: " + point.name);
 
             if(points.Contains(point))
             {

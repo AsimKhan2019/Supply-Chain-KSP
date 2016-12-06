@@ -10,11 +10,11 @@ namespace SupplyChain
         public String name;
         public Guid id;
         public CelestialBody soi;
-        public List<Vessel> vesselsAtPoint;
         
         public abstract bool isVesselAtPoint(Vessel v);
         public abstract void moveVesselToPoint(Vessel v);
-        public abstract String friendlyName();
+
+        public abstract void guiDisplayData(int id);
 
         public abstract void Load(ConfigNode node);
         public abstract void Save(ConfigNode node);

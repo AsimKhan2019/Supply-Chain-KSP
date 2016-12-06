@@ -48,6 +48,7 @@
     <Compile Include="StateTracker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SupplyChainController.cs" />
+    <Compile Include="SupplyPointView.cs" />
     <Compile Include="SupplyLink.cs" />
     <Compile Include="SupplyPoint.cs" />
   </ItemGroup>

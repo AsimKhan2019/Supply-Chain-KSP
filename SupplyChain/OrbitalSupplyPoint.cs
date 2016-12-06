@@ -35,7 +35,7 @@ namespace SupplyChain
             double pe = ((1 - ecc) * sma) - soi.Radius;
             double ap = ((1 + ecc) * sma) - soi.Radius;
 
-            name = Convert.ToString(pe) + " x " + Convert.ToString(ap) + " @ " + soi.name;
+            name = Convert.ToString(Math.Round(pe)) + " x " + Convert.ToString(Math.Round(ap)) + " (" + Convert.ToString(Math.Round(inc)) + " degrees inc.) @ " + soi.name;
         }
 
         public override bool isVesselAtPoint(Vessel v)
@@ -92,9 +92,15 @@ namespace SupplyChain
             orb.UpdateFromUT(Planetarium.GetUniversalTime());
         }
 
-        public override string friendlyName()
+        public override void guiDisplayData(int id)
         {
-            return name;
+            double pe = ((1 - ecc) * sma) - soi.Radius;
+            double ap = ((1 + ecc) * sma) - soi.Radius;
+
+            GUILayout.Label("SOI: " + soi.name);
+            GUILayout.Label("Apoapsis: " + Convert.ToString(Math.Round(ap / 1000.0)) + " km");
+            GUILayout.Label("Periapsis: " + Convert.ToString(Math.Round(pe / 1000.0)) + " km");
+            GUILayout.Label("Inclination: " + Convert.ToString(Math.Round(inc)) + " deg");
         }
 
         public override void Load(ConfigNode node)
