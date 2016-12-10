@@ -12,7 +12,7 @@ namespace SupplyChain
         private Texture tex = null;
         private bool windowActive = false;
         private ApplicationLauncherButton button = null;
-        private Rect windowPos = new Rect(0, 0, 500, 300);
+        private Rect windowPos = new Rect(0, 0, 600, 600);
 
         private Dictionary<SupplyPoint, List<Vessel>> vesselsAtPoint;
 
@@ -46,7 +46,7 @@ namespace SupplyChain
                     () => { updateVesselsAtPoint(); this.windowActive = true; },    // On toggle active.
                     () => { this.windowActive = false; },   // On toggle inactive.
                     null, null, null, null,
-                    ApplicationLauncher.AppScenes.SPACECENTER | ApplicationLauncher.AppScenes.TRACKSTATION, // Scenes to show in.
+                    ApplicationLauncher.AppScenes.SPACECENTER | ApplicationLauncher.AppScenes.TRACKSTATION | ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW, // Scenes to show in.
                     tex // Texture.
                 );
             }

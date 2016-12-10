@@ -55,39 +55,68 @@ namespace SupplyChain
             this.resourcesRequired = new Dictionary<int, double>();
         }
 
-        public bool canTraverseLink()
+        public bool checkVesselPosition()
         {
-            if(from.isVesselAtPoint(linkVessel))
-            {
-                if (!linkVessel.loaded)
-                    linkVessel.Load();
+            return from.isVesselAtPoint(linkVessel);
+        }
 
-                if (linkVessel.totalMass > maxMass)
+        public bool checkVesselMass()
+        {
+            return (linkVessel.totalMass < maxMass);
+        }
+
+        public Dictionary<int, bool> checkVesselResources()
+        {
+            if (!linkVessel.loaded)
+                linkVessel.Load();
+
+            Dictionary<int, bool> ret = new Dictionary<int, bool>();
+
+            foreach (int rsc in resourcesRequired.Keys)
+            {
+                double current = 0;
+                double max = 0;
+
+                linkVessel.GetConnectedResourceTotals(rsc, out current, out max, true);
+
+                ret.Add(rsc, current >= resourcesRequired[rsc]);
+            }
+
+            return ret;
+        }
+
+        public bool checkVesselResourceStatus()
+        {
+            if (!linkVessel.loaded)
+                linkVessel.Load();
+
+            foreach (int rsc in resourcesRequired.Keys)
+            {
+                double current = 0;
+                double max = 0;
+
+                linkVessel.GetConnectedResourceTotals(rsc, out current, out max, true);
+
+                if(current < resourcesRequired[rsc])
                 {
-                    Debug.Log("[SupplyChain] Vessel too massive for link!");
                     return false;
                 }
-
-                /* Check resources. */
-                foreach (int rsc in resourcesRequired.Keys)
-                {
-                    double current = 0;
-                    double max = 0;
-
-                    linkVessel.GetConnectedResourceTotals(rsc, out current, out max, true);
-                    
-                    if(current < resourcesRequired[rsc])
-                    {
-                        Debug.Log("[SupplyChain] Vessel " + linkVessel.name + " does not have enough " + PartResourceLibrary.Instance.GetDefinition(rsc).name);
-                        return false;
-                    }
-                }
-            } else {
-                Debug.Log("[SupplyChain] Vessel not at supply point: " + from.name);
-                return false;
             }
 
             return true;
+        }
+
+
+        public bool canTraverseLink()
+        {
+            if (!linkVessel.loaded)
+                linkVessel.Load();
+
+            return (
+                this.checkVesselPosition() &&
+                this.checkVesselMass() &&
+                this.checkVesselResourceStatus()
+            );
         }
 
         public bool traverseLink()
