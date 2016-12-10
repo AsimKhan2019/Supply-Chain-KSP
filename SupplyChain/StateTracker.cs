@@ -92,7 +92,7 @@ namespace SupplyChain
             Debug.Log("[SupplyChain] Entering rest of BeginFlightTracking");
 
             flightStartPoint = null;
-            foreach (SupplyPoint point in SupplyChainController.points)
+            foreach (SupplyPoint point in SupplyChainController.instance.points)
             {
                 Debug.Log("[SupplyPoint] Inspecting point: " + point.name);
                 if (point.isVesselAtPoint(vessel))
@@ -157,7 +157,7 @@ namespace SupplyChain
             {
                 SupplyPoint to = null;
 
-                foreach(SupplyPoint point in SupplyChainController.points)
+                foreach(SupplyPoint point in SupplyChainController.instance.points)
                 {
                     if(point.isVesselAtPoint(vessel))
                     {

@@ -10,45 +10,32 @@ namespace SupplyChain
     [KSPScenario(ScenarioCreationOptions.AddToAllGames, GameScenes.SPACECENTER, GameScenes.FLIGHT, GameScenes.TRACKSTATION)]
     public class SupplyChainController : ScenarioModule
     {
-        public static List<SupplyPoint> points;
-        public static List<SupplyLink> links;
-        public static Dictionary<SupplyPoint, List<Vessel>> vesselsAtPoint;
-        public static bool windowShown = false;
-        Texture tex;
+        public List<SupplyPoint> points;
+        public List<SupplyLink> links;
+        
+        public static SupplyLinkView slv;
+        public static SupplyPointView spv;
+
+        public static SupplyChainController instance;
 
         public override void OnAwake()
         {
-            if(points == null)
-                points = new List<SupplyPoint>();
+            instance = this;
 
-            if(links == null)
-                links = new List<SupplyLink>();
+            points = new List<SupplyPoint>();
+            links = new List<SupplyLink>();
+            
+            if(slv == null)
+                slv = new SupplyLinkView();
+
+            if(spv == null)
+                spv = new SupplyPointView();
         }
 
-        public void updateVesselsAtPoint()
+        public void OnGUI()
         {
-            vesselsAtPoint.Clear();
-
-            foreach(Vessel v in FlightGlobals.Vessels)
-            {
-                foreach(SupplyPoint p in points)
-                {
-                    if(p.isVesselAtPoint(v))
-                    {
-                        if (!vesselsAtPoint.ContainsKey(p))
-                        {
-                            vesselsAtPoint.Add(p, new List<Vessel>());
-                        }
-                        vesselsAtPoint[p].Add(v);
-                        break;
-                    }
-                }
-            }
-        }
-
-        public void FixedUpdate()
-        {
-            updateVesselsAtPoint();
+            slv.OnGUI();
+            spv.OnGUI();
         }
 
         public override void OnSave(ConfigNode node)
@@ -126,7 +113,7 @@ namespace SupplyChain
 
         public static bool registerNewSupplyPoint(SupplyPoint point)
         {
-            points.Add(point);
+            SupplyChainController.instance.points.Add(point);
             Debug.Log("[SupplyChain] Registered new supply point: " + point.name);
 
             return true; // TODO: maybe check for redundant points?
@@ -136,9 +123,9 @@ namespace SupplyChain
         {
             Debug.Log("[SupplyChain] Unregistered supply point: " + point.name);
 
-            if(points.Contains(point))
+            if(SupplyChainController.instance.points.Contains(point))
             {
-                points.Remove(point);
+                SupplyChainController.instance.points.Remove(point);
                 return true;
             }
             return false;
@@ -146,17 +133,17 @@ namespace SupplyChain
 
         public static SupplyPoint getPointByGuid(Guid id)
         {
-            return points.Find((SupplyPoint p) => { return id.Equals(p.id); });
+            return SupplyChainController.instance.points.Find((SupplyPoint p) => { return id.Equals(p.id); });
         }
 
         public static SupplyLink getLinkByGuid(Guid id)
         {
-            return links.Find((SupplyLink l) => { return id.Equals(l.id); });
+            return SupplyChainController.instance.links.Find((SupplyLink l) => { return id.Equals(l.id); });
         }
 
         public static bool registerNewSupplyLink(SupplyLink link)
         {
-            links.Add(link);
+            SupplyChainController.instance.links.Add(link);
             Debug.Log("[SupplyChain] Added new supply link from " + link.from.name + " -> " + link.to.name);
 
             return true; // TODO: maybe check for redundant points?
@@ -166,9 +153,9 @@ namespace SupplyChain
         {
             Debug.Log("[SupplyChain] Removed supply link from " + link.from.name + " -> " + link.to.name);
 
-            if (links.Contains(link))
+            if (SupplyChainController.instance.links.Contains(link))
             {
-                links.Remove(link);
+                SupplyChainController.instance.links.Remove(link);
                 return true;
             }
             return false;

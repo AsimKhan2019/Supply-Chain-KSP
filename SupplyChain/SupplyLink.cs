@@ -219,13 +219,13 @@ namespace SupplyChain
          * FlightGlobals.Vessels isn't populated when Load() is run, so we defer this step to later. */
         private void resolveVessel(bool something)
         {
-            linkVessel = null;
+            this.v = null;
 
             foreach (Vessel v in FlightGlobals.Vessels)
             {
                 if (v.id.Equals(linkVesselID))
                 {
-                    linkVessel = v;
+                    this.v = v;
                     Debug.Log("[SupplyChain] Successfully linked supply link " + from.name + " -> " + to.name + " to vessel " + linkVesselID.ToString());
                     break;
                 }

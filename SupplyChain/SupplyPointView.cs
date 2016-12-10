@@ -7,19 +7,35 @@ using KSP.UI.Screens;
 
 namespace SupplyChain
 {
-    [KSPAddon(KSPAddon.Startup.SpaceCentre, false)]
-    class SupplyPointView : MonoBehaviour
+    public class SupplyPointView : IDisposable
     {
         private Texture tex = null;
         private bool windowActive = false;
         private ApplicationLauncherButton button = null;
         private Rect windowPos = new Rect(0, 0, 500, 300);
 
-        public void OnAwake()
+        private Dictionary<SupplyPoint, List<Vessel>> vesselsAtPoint;
+
+        public SupplyPointView()
         {
             tex = new Texture();
+
+            vesselsAtPoint = new Dictionary<SupplyPoint, List<Vessel>>();
+
+            GameEvents.OnFlightGlobalsReady.Add(updateVesselsAtPoint);
+
+            /*
             GameEvents.onGUIApplicationLauncherReady.Add(addAppLauncherButton);
+
+            // one of these should work
             GameEvents.onGUIApplicationLauncherUnreadifying.Add(destroyAppLauncherButton);
+            GameEvents.onGUIApplicationLauncherDestroyed.Add(destroyAppLauncherButton);
+            GameEvents.onGameSceneLoadRequested.Add(destroyAppLauncherButton);
+            */
+
+            addAppLauncherButton();
+
+            GameEvents.onTimeWarpRateChanged.Add(() => { this.windowActive = false; });
         }
 
         private void addAppLauncherButton()
@@ -27,13 +43,18 @@ namespace SupplyChain
             if (button == null)
             {
                 button = ApplicationLauncher.Instance.AddModApplication(
-                    () => { this.windowActive = true; },    // On toggle active.
+                    () => { updateVesselsAtPoint(); this.windowActive = true; },    // On toggle active.
                     () => { this.windowActive = false; },   // On toggle inactive.
                     null, null, null, null,
-                    ApplicationLauncher.AppScenes.SPACECENTER | ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.TRACKSTATION, // Scenes to show in.
+                    ApplicationLauncher.AppScenes.SPACECENTER | ApplicationLauncher.AppScenes.TRACKSTATION, // Scenes to show in.
                     tex // Texture.
                 );
             }
+        }
+
+        private void destroyAppLauncherButton()
+        {
+            this.destroyAppLauncherButton(GameScenes.SPACECENTER);
         }
 
         private void destroyAppLauncherButton(GameScenes scenes)
@@ -42,6 +63,27 @@ namespace SupplyChain
             {
                 ApplicationLauncher.Instance.RemoveModApplication(button);
                 button = null;
+            }
+        }
+
+        private void updateVesselsAtPoint(bool something = false)
+        {
+            vesselsAtPoint.Clear();
+
+            foreach (Vessel v in FlightGlobals.Vessels)
+            {
+                foreach (SupplyPoint p in SupplyChainController.instance.points)
+                {
+                    if (p.isVesselAtPoint(v))
+                    {
+                        if (!vesselsAtPoint.ContainsKey(p))
+                        {
+                            vesselsAtPoint.Add(p, new List<Vessel>());
+                        }
+                        vesselsAtPoint[p].Add(v);
+                        break;
+                    }
+                }
             }
         }
 
@@ -54,11 +96,11 @@ namespace SupplyChain
 
             /* List of supply points. */
             scrollPoint = GUILayout.BeginScrollView(scrollPoint);
-            foreach(SupplyPoint p in SupplyChainController.points)
+            foreach(SupplyPoint p in SupplyChainController.instance.points)
             {
                 if(GUILayout.Button(p.name))
                 {
-                    selectedPoint = p;
+                    selectedPoint = (p == selectedPoint) ? null : p;
                 }
             }
             GUILayout.EndScrollView();
@@ -69,15 +111,23 @@ namespace SupplyChain
 
                 selectedPoint.guiDisplayData(id);
 
-                foreach(Vessel v in SupplyChainController.vesselsAtPoint[selectedPoint])
+                GUILayout.Label("Vessels here:");
+                if(vesselsAtPoint.ContainsKey(selectedPoint))
                 {
-                    GUILayout.Label(v.name);
+                    foreach (Vessel v in vesselsAtPoint[selectedPoint])
+                    {
+                        GUILayout.Label(v.name);
+                    }
+                } else
+                {
+                    GUILayout.Label("No vessels at point.");
                 }
+
                 GUILayout.EndVertical();
             }
 
             GUILayout.EndHorizontal();
-
+        
             GUI.DragWindow();
         }
 
@@ -85,8 +135,31 @@ namespace SupplyChain
         {
             if (windowActive)
             {
-                GUI.Window(0, windowPos, windowFunc, "Supply Points");
+                windowPos = GUI.Window(1, windowPos, windowFunc, "Supply Points");
             }
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    windowActive = false;
+                    this.destroyAppLauncherButton();
+                }
+
+                disposedValue = true;
+            }
+        }
+        
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+        #endregion
     }
 }
