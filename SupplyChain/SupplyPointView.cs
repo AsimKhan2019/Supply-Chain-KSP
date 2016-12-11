@@ -35,7 +35,7 @@ namespace SupplyChain
 
             addAppLauncherButton();
 
-            GameEvents.onTimeWarpRateChanged.Add(() => { this.windowActive = false; });
+            GameEvents.onTimeWarpRateChanged.Add(() => { updateVesselsAtPoint(); });
         }
 
         private void addAppLauncherButton()

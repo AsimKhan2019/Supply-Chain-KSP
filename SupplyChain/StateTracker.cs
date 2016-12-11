@@ -83,6 +83,53 @@ namespace SupplyChain
             }
         }
 
+        public override void OnStart(StartState state)
+        {
+            if(state != StartState.Editor)
+            {
+                Events["registerVessel"].active = !SupplyChainController.isVesselTracked(vessel);
+            }
+        }
+
+        [KSPEvent(guiActive = true, active = true, guiName = "Register Vessel")]
+        public void registerVessel()
+        {
+            if(!SupplyChainController.isVesselTracked(vessel))
+            {
+                VesselData nvd = new VesselData(vessel);
+                SupplyChainController.registerNewTrackedVessel(nvd);
+            }
+
+            Events["registerVessel"].active = false;
+        }
+
+        [KSPEvent(guiActive = true, active = true, guiName = "Create New Supply Point")]
+        public void createNewSupplyPoint()
+        {
+            foreach (SupplyPoint point in SupplyChainController.instance.points)
+            {
+                if (point.isVesselAtPoint(vessel))
+                {
+                    return;
+                }
+            }
+
+            Debug.Log("[SupplyPoint] Creating new supply point.");
+            // Create a new flight point here.
+            if (vessel.situation == Vessel.Situations.ORBITING &&
+            vessel.orbit.eccentricity > 0 && vessel.orbit.eccentricity < 1)
+            {
+                flightStartPoint = new OrbitalSupplyPoint(vessel);
+                SupplyChainController.registerNewSupplyPoint(flightStartPoint);
+            }
+            else
+            {
+                // Can't create a new flight point; unstable situation.
+                Debug.LogError("[SupplyPoint] Cannot create new supply point: in unstable orbit!");
+                return;
+            }
+        }
+
         [KSPEvent(guiActive = true, active = true, guiName = "Begin Flight Tracking")]
         public void beginFlightTracking()
         {
@@ -174,8 +221,15 @@ namespace SupplyChain
                     SupplyChainController.registerNewSupplyPoint(to);
                 }
 
+                if(!SupplyChainController.isVesselTracked(vessel))
+                {
+                    VesselData nv = new VesselData(vessel);
+                    SupplyChainController.registerNewTrackedVessel(nv);
+                }
 
-                SupplyLink result = new SupplyLink(vessel, flightStartPoint, to);
+                VesselData vd = SupplyChainController.getVesselTrackingInfo(vessel);
+
+                SupplyLink result = new SupplyLink(vd, flightStartPoint, to);
                 result.timeRequired = (vessel.missionTime - flightStartingMET);
                 result.maxMass = flightStartingMass;
 

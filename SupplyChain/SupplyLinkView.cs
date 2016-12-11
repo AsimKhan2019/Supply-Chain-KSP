@@ -14,20 +14,20 @@ namespace SupplyChain
         private ApplicationLauncherButton button = null;
         private Rect windowPos = new Rect(0, 0, 600, 600);
 
-        private GUIStyle passableStyle;     // for supply links that can be traversed
-        private GUIStyle impassableStyle;   // for supply links that cannot be traversed
+        private GUIStyle passableStyle;
+        private GUIStyle activeStyle;
+        private GUIStyle impassableStyle;
 
         private GUIStyle passableLabelStyle;
+        private GUIStyle activeLabelStyle;
         private GUIStyle impassableLabelStyle;
-
-        private Dictionary<Vessel, List<SupplyLink>> supplyLinksByVessel;
+        
         private HashSet<SupplyLink> traversableLinks;
         
         public SupplyLinkView()
         {
             tex = new Texture();
-
-            supplyLinksByVessel = new Dictionary<Vessel, List<SupplyLink>>();
+            
             traversableLinks = new HashSet<SupplyLink>();
 
             GameEvents.OnFlightGlobalsReady.Add(updateSupplyLinks);
@@ -42,25 +42,17 @@ namespace SupplyChain
             GameEvents.onGameSceneLoadRequested.Add(destroyAppLauncherButton);
             */
 
-            GameEvents.onTimeWarpRateChanged.Add(() => { this.windowActive = false; if (button != null) { button.SetFalse(); } });
+            GameEvents.onTimeWarpRateChanged.Add(() => { updateSupplyLinks(); });
         }
 
         private void updateSupplyLinks(bool something = false)
         {
-            supplyLinksByVessel.Clear();
             traversableLinks.Clear();
 
-            /* Sort supply links by vessel.*/
+            /* Save traversable links. */
             foreach (SupplyLink l in SupplyChainController.instance.links)
             {
-                if (!supplyLinksByVessel.ContainsKey(l.linkVessel))
-                {
-                    supplyLinksByVessel.Add(l.linkVessel, new List<SupplyLink>());
-                }
-
-                supplyLinksByVessel[l.linkVessel].Add(l);
-
-                if (l.canTraverseLink())
+                if (!l.active && l.canTraverseLink())
                     traversableLinks.Add(l);
             }
         }
@@ -104,41 +96,99 @@ namespace SupplyChain
         private bool linkPositionStatus = false;
         private bool linkOverallStatus = false;
 
+        /*
+         * small form = "DD:HH:MM:SS"
+         * large form = "dd days, hh hours, mm minutes, ss seconds"
+         */
+        public static string formatTimespan(double ts, bool smallForm=false)
+        {
+            string ret = "";
+
+            int t = (int)Math.Round(ts);
+
+            int days = 0;
+            
+            if (GameSettings.KERBIN_TIME)
+            {
+                days = t / (int)Math.Round(FlightGlobals.Bodies[1].solarDayLength);
+                t %= (int)Math.Round(FlightGlobals.Bodies[1].solarDayLength);
+            } else
+            {
+                days = t / 86400;
+                t %= 86400;
+            }
+
+            int hours = t / 3600;
+            t %= 3600;
+
+            int minutes = t / 60;
+            t %= 60;
+
+            if(smallForm)
+            {
+                if (days > 0)
+                    ret += days.ToString("D2");
+
+                if (hours > 0)
+                    ret += ((ret.Length > 0) ? ":" : "") + hours.ToString("D2") + "";
+
+                if (minutes > 0)
+                    ret += ((ret.Length > 0) ? ":" : "") + minutes.ToString("D2") + "";
+
+                if (t > 0)
+                    ret += ((ret.Length > 0) ? ":" : "") + t.ToString("D2") + "";
+            } else
+            {
+                if (days > 0)
+                    ret += days.ToString() + " days";
+
+                if (hours > 0)
+                    ret += ((ret.Length > 0) ? ", " : "") + hours.ToString() + " hours";
+
+                if (minutes > 0)
+                    ret += ((ret.Length > 0) ? ", " : "") + minutes.ToString() + " minutes";
+
+                if (t > 0)
+                    ret += ((ret.Length > 0) ? ", " : "") + t.ToString() + " seconds";
+            }
+
+            return ret;
+        }
+
         private void windowFunc(int id)
         {
             GUILayout.BeginHorizontal();
 
             scrollPoint = GUILayout.BeginScrollView(scrollPoint);
-            foreach(Vessel v in supplyLinksByVessel.Keys)
+            foreach(VesselData vd in SupplyChainController.instance.trackedVessels)
             {
-                GUILayout.Label(v.name + " @ " + v.orbit.referenceBody.name);
-                foreach(SupplyLink l in supplyLinksByVessel[v])
+                GUILayout.Label(
+                    (vd.vessel.loaded ? vd.vessel.name : vd.vessel.protoVessel.vesselName)
+                    + " @ " + vd.vessel.GetOrbitDriver().referenceBody.name);
+
+                Debug.Log("[SupplyChain] Showing tracked vessel: " + (vd.vessel.loaded ? vd.vessel.name : vd.vessel.protoVessel.vesselName));
+
+                foreach (SupplyLink l in vd.links)
                 {
-                    if(traversableLinks.Contains(l))
+                    GUIStyle st = impassableStyle;
+
+                    if (traversableLinks.Contains(l))
                     {
-                        if (GUILayout.Button(l.from.name + " -> " + l.to.name, passableStyle))
-                        {
-                            selectedLink = (selectedLink == l) ? null : l;
-                            if (selectedLink != null)
-                            {
-                                linkMassStatus = l.checkVesselMass();
-                                linkResourceStatus = l.checkVesselResources();
-                                linkPositionStatus = l.checkVesselPosition();
-                                linkOverallStatus = true;
-                            }
-                        }
-                    } else
+                        st = passableStyle;
+                    } else if(l.active)
                     {
-                        if(GUILayout.Button(l.from.name + " -> " + l.to.name, impassableStyle))
+                        st = activeStyle;
+                    }
+
+                    if (GUILayout.Button(l.from.name + " -> " + l.to.name, st))
+                    {
+                        selectedLink = (selectedLink == l) ? null : l;
+                        if (selectedLink != null)
                         {
-                            selectedLink = (selectedLink == l) ? null : l;
-                            if(selectedLink != null)
-                            {
-                                linkMassStatus = l.checkVesselMass();
-                                linkResourceStatus = l.checkVesselResources();
-                                linkPositionStatus = l.checkVesselPosition();
-                                linkOverallStatus = false;
-                            }
+                            linkMassStatus = l.checkVesselMass();
+                            linkResourceStatus = l.checkVesselResources();
+                            linkPositionStatus = l.checkVesselPosition();
+                            linkOverallStatus = true;
                         }
                     }
                 }
@@ -152,7 +202,7 @@ namespace SupplyChain
                 /* Basic data. */
                 GUILayout.BeginVertical();
 
-                GUILayout.Label("Vessel: " + selectedLink.linkVessel.name);
+                GUILayout.Label("Vessel: " + selectedLink.linkVessel.vessel.name);
                 GUILayout.Label("From: " + selectedLink.from.name, linkPositionStatus ? passableLabelStyle : impassableLabelStyle);
                 GUILayout.Label("To: " + selectedLink.to.name);
 
@@ -164,20 +214,9 @@ namespace SupplyChain
                 GUILayout.Label("Requirements:");
                 GUILayout.Label("Maximum Mass: " + Convert.ToString(Math.Round(selectedLink.maxMass, 3)) + " tons", linkMassStatus ? passableLabelStyle : impassableLabelStyle);
 
-                int t = (int)Math.Round(selectedLink.timeRequired);
-                int days = t / (int)Math.Round(FlightGlobals.Bodies[1].solarDayLength);
-                t %= (int)Math.Round(FlightGlobals.Bodies[1].solarDayLength);
-                int hours = t / 3600;
-                t %= 3600;
-                int minutes = t / 60;
-                t %= 60;
 
-                GUILayout.Label("Time Required: " +
-                    (days > 0 ? Convert.ToString(days) + " days " : "") +
-                    (hours > 0 ? Convert.ToString(hours) + " hours " : "") +
-                    (minutes > 0 ? Convert.ToString(minutes) + " minutes " : "") +
-                    (t > 0 ? Convert.ToString(t) + " seconds" : "")
-                );
+
+                GUILayout.Label("Time Required: " + SupplyLinkView.formatTimespan(selectedLink.timeRequired));
 
                 foreach(int rsc in linkResourceStatus.Keys)
                 {
@@ -187,13 +226,17 @@ namespace SupplyChain
 
                 GUILayout.EndVertical();
 
-                if(linkOverallStatus)
+                if(selectedLink.active)
                 {
-                    if(GUILayout.Button("Traverse Link"))
+                    GUILayout.Label("Currently Traversing Link\nT-"+
+                        SupplyLinkView.formatTimespan(selectedLink.timeComplete - Planetarium.GetUniversalTime(), true),
+                        activeStyle
+                    );
+                } else if (linkOverallStatus)
+                {
+                    if (GUILayout.Button("Traverse Link"))
                     {
                         selectedLink.traverseLink();
-                        button.Disable();
-                        windowActive = false;
                     }
                 }
 
@@ -214,16 +257,31 @@ namespace SupplyChain
                 passableStyle.normal.textColor = Color.green;
             }
 
+            if (activeStyle == null)
+            {
+                activeStyle = new GUIStyle("button");
+                activeStyle.normal.textColor = Color.yellow;
+            }
+
             if (impassableStyle == null)
             {
                 impassableStyle = new GUIStyle("button");
                 impassableStyle.normal.textColor = Color.red;
             }
 
+
+
+
             if (passableLabelStyle == null)
             {
                 passableLabelStyle = new GUIStyle("label");
                 passableLabelStyle.normal.textColor = Color.green;
+            }
+
+            if (activeLabelStyle == null)
+            {
+                activeLabelStyle = new GUIStyle("label");
+                activeLabelStyle.normal.textColor = Color.yellow;
             }
 
             if (impassableLabelStyle == null)

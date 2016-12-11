@@ -12,18 +12,20 @@ namespace SupplyChain
     {
         public List<SupplyPoint> points;
         public List<SupplyLink> links;
+        public List<VesselData> trackedVessels;
         
         public static SupplyLinkView slv;
         public static SupplyPointView spv;
 
         public static SupplyChainController instance;
-
+        
         public override void OnAwake()
         {
             instance = this;
 
             points = new List<SupplyPoint>();
             links = new List<SupplyLink>();
+            trackedVessels = new List<VesselData>();
             
             if(slv == null)
                 slv = new SupplyLinkView();
@@ -38,6 +40,21 @@ namespace SupplyChain
             spv.OnGUI();
         }
 
+        public void FixedUpdate()
+        {
+            /* Check for active links. */
+            foreach(SupplyLink l in links)
+            {
+                if(l.active)
+                {
+                    if(Planetarium.GetUniversalTime() >= l.timeComplete)
+                    {
+                        l.onLinkTraversed();
+                    }
+                }
+            }
+        }
+
         public override void OnSave(ConfigNode node)
         {
             if (points == null)
@@ -45,6 +62,9 @@ namespace SupplyChain
 
             if (links == null)
                 links = new List<SupplyLink>();
+
+            if (trackedVessels == null)
+                trackedVessels = new List<VesselData>();
 
             Debug.Log("[SupplyChain] Saving SupplyPoints...");
             /* Save all SupplyPoints. */
@@ -63,6 +83,13 @@ namespace SupplyChain
                 ConfigNode linkNode = node.AddNode("SupplyLink");
                 link.Save(linkNode);
             }
+
+            Debug.Log("[SupplyChain] Saving Vessel Data...");
+            foreach(VesselData v in trackedVessels)
+            {
+                ConfigNode vessNode = node.AddNode("TrackedVessel");
+                v.Save(vessNode);
+            }
         }
 
         public override void OnLoad(ConfigNode node)
@@ -72,6 +99,9 @@ namespace SupplyChain
 
             if (links == null)
                 links = new List<SupplyLink>();
+
+            if (trackedVessels == null)
+                trackedVessels = new List<VesselData>();
 
             /* Load all SupplyPoints. */
             Debug.Log("[SupplyChain] Loading SupplyPoints...");
@@ -94,6 +124,15 @@ namespace SupplyChain
                             break;
                     }
                 }
+            }
+
+            Debug.Log("[SupplyChain] Loading tracked vessels...");
+            ConfigNode[] vessNodes = node.GetNodes("TrackedVessel");
+            foreach (ConfigNode vessNode in vessNodes)
+            {
+                VesselData v = new VesselData();
+                v.Load(vessNode);
+                trackedVessels.Add(v);
             }
 
             /* Load all SupplyLinks. */
@@ -144,6 +183,7 @@ namespace SupplyChain
         public static bool registerNewSupplyLink(SupplyLink link)
         {
             SupplyChainController.instance.links.Add(link);
+
             Debug.Log("[SupplyChain] Added new supply link from " + link.from.name + " -> " + link.to.name);
 
             return true; // TODO: maybe check for redundant points?
@@ -155,10 +195,44 @@ namespace SupplyChain
 
             if (SupplyChainController.instance.links.Contains(link))
             {
-                SupplyChainController.instance.links.Remove(link);
                 return true;
             }
             return false;
+        }
+
+        public static bool registerNewTrackedVessel(VesselData v)
+        {
+            if(!SupplyChainController.instance.trackedVessels.Contains(v))
+            {
+                SupplyChainController.instance.trackedVessels.Add(v);
+                Debug.Log("[SupplyChain] Registered new tracked vessel:");
+                Debug.Log("[SupplyChain]     Name: " + v.vessel.name);
+                Debug.Log("[SupplyChain]     VesselID = " + v.vesselID.ToString());
+                Debug.Log("[SupplyChain]     Root PartID = " + Convert.ToString(v.rootPartID));
+                Debug.Log("[SupplyChain]     Tracking ID = " + v.trackingID.ToString());
+                return true;
+            }
+            return false;
+        }
+
+        public static bool deregisterNewTrackedVessel(VesselData v)
+        {
+            if (SupplyChainController.instance.trackedVessels.Contains(v))
+            {
+                SupplyChainController.instance.trackedVessels.Remove(v);
+                return true;
+            }
+            return false;
+        }
+
+        public static VesselData getVesselTrackingInfo(Vessel v)
+        {
+            return SupplyChainController.instance.trackedVessels.Find((VesselData vd) => { return (vd.vesselID.Equals(v.id)); });
+        }
+
+        public static bool isVesselTracked(Vessel v)
+        {
+            return SupplyChainController.instance.trackedVessels.Exists((VesselData vd) => { return (vd.vesselID.Equals(v.id)); });
         }
     }
 }

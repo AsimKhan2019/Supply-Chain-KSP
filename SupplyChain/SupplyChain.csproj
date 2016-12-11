@@ -52,6 +52,7 @@
     <Compile Include="SupplyPointView.cs" />
     <Compile Include="SupplyLink.cs" />
     <Compile Include="SupplyPoint.cs" />
+    <Compile Include="VesselData.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -41,38 +41,41 @@ namespace SupplyChain
         public override bool isVesselAtPoint(Vessel v)
         {
             Debug.Log("[SupplyChain] Testing " + v.name + " against " + name + ": Attempting to retrieve orbit...");
-            Orbit curOrbit = v.GetOrbit();
-
-            if (curOrbit.referenceBody != soi)
+            if (v.loaded)
             {
-                Debug.Log("[SupplyChain] Testing " + v.name + " against " + name + ": Not in same SOI!");
-                return false;
-            }
+                Orbit curOrbit = v.GetOrbit();
 
-            Debug.Log("[SupplyChain] Testing " + v.name + " against " + name + ": Testing orbits...");
-            if ( // TODO: tweak these thresholds
-                (Math.Abs(curOrbit.eccentricity - ecc) < 0.05) && // Allowed eccentricity variance is +- 0.05.
-                (Math.Abs(curOrbit.semiMajorAxis - sma) < 10000.0) && // Allowed SMA variance is +- 10km.
-                (Math.Abs(curOrbit.inclination - inc) < 5) // Allowed inclination variance is +- 5 degrees
-               )
-            {
-                return true;
-            }
+                if (curOrbit.referenceBody != soi)
+                    return false;
+                
+                if ( // TODO: tweak these thresholds
+                    (Math.Abs(curOrbit.eccentricity - ecc) < 0.05) && // Allowed eccentricity variance is +- 0.05.
+                    (Math.Abs(curOrbit.semiMajorAxis - sma) < 10000.0) && // Allowed SMA variance is +- 10km.
+                    (Math.Abs(curOrbit.inclination - inc) < 5) // Allowed inclination variance is +- 5 degrees
+                   )
+                {
+                    return true;
+                }
 
-            if(Math.Abs(curOrbit.eccentricity - ecc) > 0.05)
+            } else
             {
-                Debug.Log("[SupplyChain] Testing " + v.name + " against " + name + ": Eccentricity check failed! (diff = " + Convert.ToString(Math.Abs(curOrbit.eccentricity - ecc)) + ")");   
-            }
+                OrbitSnapshot curOrbit = v.protoVessel.orbitSnapShot;
 
-            if (Math.Abs(curOrbit.semiMajorAxis - sma) > 10000.0)
-            {
-                Debug.Log("[SupplyChain] Testing " + v.name + " against " + name + ": SMA check failed! (diff = " + Convert.ToString(Math.Abs(curOrbit.semiMajorAxis - sma)) + ")");
-            }
+                if (FlightGlobals.Bodies[curOrbit.ReferenceBodyIndex] != soi)
+                    return false;
 
-            if (Math.Abs(curOrbit.inclination - inc) > 5)
-            {
-                Debug.Log("[SupplyChain] Testing " + v.name + " against " + name + ": Inclination check failed! (diff = " + Convert.ToString(Math.Abs(curOrbit.inclination - inc)) + ")");
+                if ( // TODO: tweak these thresholds
+                    (Math.Abs(curOrbit.eccentricity - ecc) < 0.05) && // Allowed eccentricity variance is +- 0.05.
+                    (Math.Abs(curOrbit.semiMajorAxis - sma) < 10000.0) && // Allowed SMA variance is +- 10km.
+                    (Math.Abs(curOrbit.inclination - inc) < 5) // Allowed inclination variance is +- 5 degrees
+                   )
+                {
+                    return true;
+                }
             }
+            
+
+            
             return false;
         }
 
