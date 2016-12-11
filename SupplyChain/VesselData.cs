@@ -24,7 +24,7 @@ namespace SupplyChain
         public VesselData()
         {
             this.links = new List<SupplyLink>();
-
+            
             GameEvents.onPartUndock.Add(
                 (Part p) => { handleDockingEvent(p, false); }
             );
