@@ -26,7 +26,7 @@ namespace SupplyChain
         
         public SupplyLinkView()
         {
-            tex = new Texture();
+            tex = GameDatabase.Instance.GetTexture("SupplyChain/Icons/SupplyLinkIcon", false);
             
             traversableLinks = new HashSet<SupplyLink>();
 

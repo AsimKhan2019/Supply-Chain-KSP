@@ -18,7 +18,7 @@ namespace SupplyChain
 
         public SupplyPointView()
         {
-            tex = new Texture();
+            tex = GameDatabase.Instance.GetTexture("SupplyChain/Icons/SupplyPointIcon", false);
 
             vesselsAtPoint = new Dictionary<SupplyPoint, List<Vessel>>();
 
