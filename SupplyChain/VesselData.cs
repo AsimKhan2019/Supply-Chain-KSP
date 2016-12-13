@@ -21,6 +21,8 @@ namespace SupplyChain
         public List<SupplyLink> links;
         public bool orbitalDockingEnabled = false;
 
+        public SupplyPoint currentLocation;
+
         public VesselData()
         {
             this.links = new List<SupplyLink>();
@@ -35,13 +37,22 @@ namespace SupplyChain
 
             // Do we actually need to resolve vessel references on every scene switch?
             GameEvents.onGameSceneLoadRequested.Add((GameScenes s) => { this.resolved = false; });
+
+            GameEvents.onFlightReady.Add(this.periodicUpdate);
+            GameEvents.onTimeWarpRateChanged.Add(this.periodicUpdate);
         }
 
         public VesselData(Vessel v)
         {
             this.vesselRef = v;
             this.linkedID = v.id;
-            this.rootPartID = v.rootPart.flightID;
+            if (v.loaded)
+            {
+                this.rootPartID = v.rootPart.flightID;
+            } else
+            {
+                this.rootPartID = v.protoVessel.protoPartSnapshots[v.protoVessel.rootIndex].flightID;
+            }
             this.trackingID = Guid.NewGuid();
             this.resolved = true;
 
@@ -54,6 +65,9 @@ namespace SupplyChain
             );
 
             this.links = new List<SupplyLink>();
+
+            GameEvents.onFlightReady.Add(this.periodicUpdate);
+            GameEvents.onTimeWarpRateChanged.Add(this.periodicUpdate);
         }
 
         public void Load(ConfigNode node)
@@ -188,7 +202,106 @@ namespace SupplyChain
             }
         }
 
-        public Dictionary<int, bool> checkResources(Dictionary<int, double> resources)
+        public void getResourceCount(int resource, out double current, out double max)
+        {
+            if (vessel.loaded)
+            {
+                vessel.GetConnectedResourceTotals(resource, out current, out max);
+            }
+            else
+            {
+                double c = 0;
+                double m = 0;
+
+                foreach (ProtoPartSnapshot snap in vessel.protoVessel.protoPartSnapshots)
+                {
+                    foreach (ProtoPartResourceSnapshot rsc_snap in snap.resources)
+                    {
+                        if (rsc_snap.definition.id == resource)
+                        {
+                            c += rsc_snap.amount;
+                            m += rsc_snap.maxAmount;
+                        }
+                    }
+                }
+
+                current = c;
+                max = m;
+            }
+        }
+
+        public void getResourcesCount(out Dictionary<int, double> amounts, out Dictionary<int, double> maximums)
+        {
+            amounts = new Dictionary<int, double>();
+            maximums = new Dictionary<int, double>();
+
+            if (vessel.loaded)
+            {
+                foreach (Part p in this.vessel.parts)
+                {
+                    foreach (PartResource r in p.Resources)
+                    {
+                        if(!amounts.ContainsKey(r.info.id))
+                        {
+                            amounts.Add(r.info.id, 0);
+                            maximums.Add(r.info.id, 0);
+                        }
+
+                        amounts[r.info.id] += r.amount;
+                        maximums[r.info.id] += r.maxAmount;
+                    }
+                }
+            }
+            else
+            {
+                foreach (ProtoPartSnapshot snap in vessel.protoVessel.protoPartSnapshots)
+                {
+                    foreach (ProtoPartResourceSnapshot rsc_snap in snap.resources)
+                    {
+                        if (!amounts.ContainsKey(rsc_snap.definition.id))
+                        {
+                            amounts.Add(rsc_snap.definition.id, 0);
+                            maximums.Add(rsc_snap.definition.id, 0);
+                        }
+
+                        amounts[rsc_snap.definition.id] += rsc_snap.amount;
+                        maximums[rsc_snap.definition.id] += rsc_snap.maxAmount;
+                    }
+                }
+            }
+        }
+
+        public HashSet<int> getResourceTypesOnVessel()
+        {
+            HashSet<int> rscTypes = new HashSet<int>();
+
+            if (vessel.loaded)
+            {
+                foreach(Part p in this.vessel.parts)
+                {
+                    foreach(PartResource r in p.Resources)
+                    {
+                        if (!rscTypes.Contains(r.info.id))
+                            rscTypes.Add(r.info.id);
+                    }
+                }
+            }
+            else
+            {
+                foreach (ProtoPartSnapshot snap in vessel.protoVessel.protoPartSnapshots)
+                {
+                    foreach (ProtoPartResourceSnapshot rsc_snap in snap.resources)
+                    {
+                        if (!rscTypes.Contains(rsc_snap.definition.id))
+                            rscTypes.Add(rsc_snap.definition.id);
+                    }
+                }
+            }
+
+            return rscTypes;
+        }
+
+        public Dictionary<int, bool> checkResources(Dictionary<int, double> resources, bool checkMax=false)
         {
             Dictionary<int, bool> ret = new Dictionary<int, bool>();
 
@@ -196,107 +309,43 @@ namespace SupplyChain
             {
                 double current = 0;
                 double max = 0;
-                if (vessel.loaded)
+                getResourceCount(rsc, out current, out max);
+
+                if (checkMax)
                 {
-                    vessel.GetConnectedResourceTotals(rsc, out current, out max);
+                    ret.Add(rsc, (max <= resources[rsc]));
                 }
                 else
                 {
-                    foreach (ProtoPartSnapshot snap in vessel.protoVessel.protoPartSnapshots)
-                    {
-                        foreach (ProtoPartResourceSnapshot rsc_snap in snap.resources)
-                        {
-                            if(rsc_snap.definition.id == rsc)
-                            {
-                                current += rsc_snap.amount;
-                                max += rsc_snap.maxAmount;
-                            }
-                        }
-                    }
+                    ret.Add(rsc, (current >= resources[rsc]));
                 }
-                
-
-                ret.Add(rsc, (current >= resources[rsc]));
             }
 
             return ret;
         }
 
         /**
-         * Removes or adds resources to a craft. 
-         * Pass in a dictionary mapping resource IDs to the amounts to drain/add for each.
-         * Negative values will add resources, positive values will drain.
+         * Sets a resource on a craft to 0 or max amount that can be stored.
+         * True = set resource to max
+         * False = set resource to empty
          */
-        public void modifyResources(Dictionary<int, double> resources)
+        public void setResourceToExtreme(int resource, bool minMax)
         {
-
             if (vessel.loaded)
             {
-                Dictionary<int, List<PartResource>> partsByResource = new Dictionary<int, List<PartResource>>();
-
                 foreach (Part p in vessel.parts)
                 {
                     foreach (PartResource r in p.Resources)
                     {
-                        if(!partsByResource.ContainsKey(r.info.id))
+                        if (r.info.id == resource)
                         {
-                            partsByResource.Add(r.info.id, new List<PartResource>());
-                        }
-
-                        partsByResource[r.info.id].Add(r);
-                    }
-                }
-
-                foreach (int rsc in resources.Keys)
-                {
-                    if (partsByResource[rsc].Count == 0)
-                        continue;
-
-                    double changePerPart = resources[rsc] / partsByResource[rsc].Count;
-                    double remaining = Math.Abs(resources[rsc]);
-
-                    // Iterate over every part and drain/add as much as we can up to changePerPart.
-                    // If we can't drain the full amount (drainPerPart) then empty the part and reiterate.
-                    while (remaining > 0)
-                    {
-                        foreach (PartResource p in partsByResource[rsc])
-                        {
-                            if (remaining <= 0)
-                                break;
-
-                            if (remaining >= Math.Abs(changePerPart))
+                            if (minMax)
                             {
-                                if (changePerPart > 0)
-                                {
-                                    if (p.amount >= changePerPart)
-                                    {
-                                        remaining -= changePerPart;
-                                        p.amount -= changePerPart;
-                                    }
-                                    else
-                                    {
-                                        remaining -= p.amount;
-                                        p.amount = 0;
-                                    }
-                                }
-                                else
-                                {
-                                    if ((p.maxAmount - p.amount) <= changePerPart)
-                                    {
-                                        p.amount += Math.Abs(changePerPart);
-                                        remaining -= Math.Abs(changePerPart);
-                                    }
-                                    else
-                                    {
-                                        remaining -= (p.maxAmount - p.amount);
-                                        p.amount = p.maxAmount;
-                                    }
-                                }
+                                r.amount = r.maxAmount;
                             }
                             else
                             {
-                                p.amount -= remaining;
-                                break;
+                                r.amount = 0;
                             }
                         }
                     }
@@ -304,75 +353,221 @@ namespace SupplyChain
             }
             else
             {
-                /* A lot of this is duplicated from above. */
-                Dictionary<int, List<ProtoPartResourceSnapshot>> partsByResource = new Dictionary<int, List<ProtoPartResourceSnapshot>>();
-
                 foreach (ProtoPartSnapshot p in vessel.protoVessel.protoPartSnapshots)
                 {
                     foreach (ProtoPartResourceSnapshot r in p.resources)
                     {
-                        if (!partsByResource.ContainsKey(r.definition.id))
+                        if (r.definition.id == resource)
                         {
-                            partsByResource.Add(r.definition.id, new List<ProtoPartResourceSnapshot>());
-                        }
-
-                        partsByResource[r.definition.id].Add(r);
-                    }
-                }
-
-                foreach (int rsc in resources.Keys)
-                {
-                    if (partsByResource[rsc].Count == 0)
-                        continue;
-
-                    double changePerPart = resources[rsc] / partsByResource[rsc].Count;
-                    double remaining = Math.Abs(resources[rsc]);
-                    
-                    while (remaining > 0)
-                    {
-                        foreach (ProtoPartResourceSnapshot p in partsByResource[rsc])
-                        {
-                            if (remaining <= 0)
-                                break;
-
-                            if (remaining >= Math.Abs(changePerPart))
+                            if (minMax)
                             {
-                                if (changePerPart > 0)
-                                {
-                                    if (p.amount >= changePerPart)
-                                    {
-                                        remaining -= changePerPart;
-                                        p.amount -= changePerPart;
-                                    }
-                                    else
-                                    {
-                                        remaining -= p.amount;
-                                        p.amount = 0;
-                                    }
-                                }
-                                else
-                                {
-                                    if ((p.maxAmount - p.amount) <= changePerPart)
-                                    {
-                                        p.amount += Math.Abs(changePerPart);
-                                        remaining -= Math.Abs(changePerPart);
-                                    }
-                                    else
-                                    {
-                                        remaining -= (p.maxAmount - p.amount);
-                                        p.amount = p.maxAmount;
-                                    }
-                                }
+                                r.amount = r.maxAmount;
                             }
                             else
                             {
-                                p.amount -= remaining;
-                                break;
+                                r.amount = 0;
                             }
                         }
                     }
                 }
             }
         }
+
+        public void setResourcesToExtreme(Dictionary<int, bool> resources)
+        {
+            foreach(int rsc in resources.Keys)
+            {
+                setResourceToExtreme(rsc, resources[rsc]);
+            }
+        }
+
+        /**
+         * Removes or adds resources to a craft. 
+         * Pass in a dictionary mapping resource IDs to the amounts to drain/add for each.
+         * Negative values will add resources, positive values will drain.
+         */
+        public void modifyResource(int rsc, double amount)
+        {
+            if (vessel.loaded)
+            {
+                List<PartResource> resourceHolders = new List<PartResource>();
+
+                foreach (Part p in vessel.parts)
+                {
+                    foreach (PartResource r in p.Resources)
+                    {
+                        if (r.info.id == rsc)
+                            resourceHolders.Add(r);
+                    }
+                }
+
+                if (resourceHolders.Count == 0)
+                    return;
+
+                double changePerPart = amount / resourceHolders.Count;
+                double remaining = Math.Abs(amount);
+
+                bool changed = false;
+
+                while (remaining > 0)
+                {
+                    foreach (PartResource p in resourceHolders)
+                    {
+                        if (remaining <= 0)
+                            break;
+
+                        if (remaining >= Math.Abs(changePerPart))
+                        {
+                            if (changePerPart > 0)
+                            {
+                                if (p.amount >= changePerPart)
+                                {
+                                    remaining -= changePerPart;
+                                    p.amount -= changePerPart;
+                                    changed = true;
+                                }
+                                else
+                                {
+                                    remaining -= p.amount;
+                                    p.amount = 0;
+                                    changed = true;
+                                }
+                            }
+                            else
+                            {
+                                if ((p.maxAmount - p.amount) <= changePerPart)
+                                {
+                                    p.amount += Math.Abs(changePerPart);
+                                    remaining -= Math.Abs(changePerPart);
+                                    changed = true;
+                                }
+                                else
+                                {
+                                    remaining -= (p.maxAmount - p.amount);
+                                    p.amount = p.maxAmount;
+                                    changed = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            p.amount -= remaining;
+                            changed = true;
+                            break;
+                        }
+                    }
+
+                    if (!changed)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        changed = false;
+                    }
+                }
+            }
+            else
+            {
+                /* There HAS to be a better way to do this. */
+                List<ProtoPartResourceSnapshot> resourceHolders = new List<ProtoPartResourceSnapshot>();
+
+                foreach (ProtoPartSnapshot p in vessel.protoVessel.protoPartSnapshots)
+                {
+                    foreach (ProtoPartResourceSnapshot r in p.resources)
+                    {
+                        if (r.definition.id == rsc)
+                            resourceHolders.Add(r);
+                    }
+                }
+
+                if (resourceHolders.Count == 0)
+                    return;
+
+                double changePerPart = amount / resourceHolders.Count;
+                double remaining = Math.Abs(amount);
+
+                bool changed = false;
+
+                while (remaining > 0)
+                {
+                    foreach (ProtoPartResourceSnapshot p in resourceHolders)
+                    {
+                        if (remaining <= 0)
+                            break;
+
+                        if (remaining >= Math.Abs(changePerPart))
+                        {
+                            if (changePerPart > 0)
+                            {
+                                if (p.amount >= changePerPart)
+                                {
+                                    remaining -= changePerPart;
+                                    p.amount -= changePerPart;
+                                    changed = true;
+                                }
+                                else
+                                {
+                                    remaining -= p.amount;
+                                    p.amount = 0;
+                                    changed = true;
+                                }
+                            }
+                            else
+                            {
+                                if ((p.maxAmount - p.amount) <= changePerPart)
+                                {
+                                    p.amount += Math.Abs(changePerPart);
+                                    remaining -= Math.Abs(changePerPart);
+                                    changed = true;
+                                }
+                                else
+                                {
+                                    remaining -= (p.maxAmount - p.amount);
+                                    p.amount = p.maxAmount;
+                                    changed = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            p.amount -= remaining;
+                            changed = true;
+                            break;
+                        }
+                    }
+
+                    if (!changed)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        changed = false;
+                    }
+                }
+            }
+        } // end of modifyResource
+
+        public void modifyResources(Dictionary<int, double> resources)
+        {
+            foreach(int rsc in resources.Keys)
+            {
+                modifyResource(rsc, resources[rsc]);
+            }
+        }
+
+        public void periodicUpdate()
+        {
+            foreach (SupplyPoint pt in SupplyChainController.instance.points)
+            {
+                if (pt.isVesselAtPoint(this.vessel))
+                {
+                    this.currentLocation = pt;
+                    break;
+                }
+            }
+        }
+
     }
 }

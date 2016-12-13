@@ -7,7 +7,7 @@ using KSP.UI.Screens;
 
 namespace SupplyChain
 {
-    public class SupplyLinkView
+    public class SupplyActionView
     {
         private Texture tex = null;
         private bool windowActive = false;
@@ -24,7 +24,7 @@ namespace SupplyChain
         
         private HashSet<SupplyLink> traversableLinks;
         
-        public SupplyLinkView()
+        public SupplyActionView()
         {
             tex = GameDatabase.Instance.GetTexture("SupplyChain/Icons/SupplyLinkIcon", false);
             
@@ -33,15 +33,7 @@ namespace SupplyChain
             GameEvents.OnFlightGlobalsReady.Add(updateSupplyLinks);
 
             addAppLauncherButton();
-
-            /*
-            GameEvents.onGUIApplicationLauncherReady.Add(addAppLauncherButton);
-
-            GameEvents.onGUIApplicationLauncherUnreadifying.Add(destroyAppLauncherButton);
-            GameEvents.onGUIApplicationLauncherDestroyed.Add(destroyAppLauncherButton);
-            GameEvents.onGameSceneLoadRequested.Add(destroyAppLauncherButton);
-            */
-
+            
             GameEvents.onTimeWarpRateChanged.Add(() => { updateSupplyLinks(); });
         }
 
@@ -52,7 +44,7 @@ namespace SupplyChain
             /* Save traversable links. */
             foreach (SupplyLink l in SupplyChainController.instance.links)
             {
-                if (!l.active && l.canTraverseLink())
+                if (!l.active && l.canExecute())
                     traversableLinks.Add(l);
             }
         }
@@ -85,34 +77,26 @@ namespace SupplyChain
                 button = null;
             }
         }
-        
-        private Vector2 scrollPoint;
-        private Vector2 selectScrollPt;
 
-        private SupplyLink selectedLink = null;
-
-        private bool linkMassStatus = false;
-        private Dictionary<int, bool> linkResourceStatus;
-        private bool linkPositionStatus = false;
-        private bool linkOverallStatus = false;
 
         /*
          * small form = "DD:HH:MM:SS"
          * large form = "dd days, hh hours, mm minutes, ss seconds"
          */
-        public static string formatTimespan(double ts, bool smallForm=false)
+        public static string formatTimespan(double ts, bool smallForm = false)
         {
             string ret = "";
 
             int t = (int)Math.Round(ts);
 
             int days = 0;
-            
+
             if (GameSettings.KERBIN_TIME)
             {
                 days = t / (int)Math.Round(FlightGlobals.Bodies[1].solarDayLength);
                 t %= (int)Math.Round(FlightGlobals.Bodies[1].solarDayLength);
-            } else
+            }
+            else
             {
                 days = t / 86400;
                 t %= 86400;
@@ -124,7 +108,7 @@ namespace SupplyChain
             int minutes = t / 60;
             t %= 60;
 
-            if(smallForm)
+            if (smallForm)
             {
                 if (days > 0)
                     ret += days.ToString("D2");
@@ -137,7 +121,8 @@ namespace SupplyChain
 
                 if (t > 0)
                     ret += ((ret.Length > 0) ? ":" : "") + t.ToString("D2") + "";
-            } else
+            }
+            else
             {
                 if (days > 0)
                     ret += days.ToString() + " days";
@@ -155,18 +140,26 @@ namespace SupplyChain
             return ret;
         }
 
+        private Vector2 scrollPoint;
+
+        private SupplyLinkDetailsView sldv = null;
+        private SupplyTransferDetailsView stdv = null;
+
+        private SupplyLink selectedLink = null;
+        private VesselData selectedTransfer = null;
+        
+
         private void windowFunc(int id)
         {
             GUILayout.BeginHorizontal();
 
+            /* Action select view */
             scrollPoint = GUILayout.BeginScrollView(scrollPoint);
             foreach(VesselData vd in SupplyChainController.instance.trackedVessels)
             {
                 GUILayout.Label(
                     (vd.vessel.loaded ? vd.vessel.name : vd.vessel.protoVessel.vesselName)
                     + " @ " + vd.vessel.GetOrbitDriver().referenceBody.name);
-
-                Debug.Log("[SupplyChain] Showing tracked vessel: " + (vd.vessel.loaded ? vd.vessel.name : vd.vessel.protoVessel.vesselName));
 
                 foreach (SupplyLink l in vd.links)
                 {
@@ -180,68 +173,54 @@ namespace SupplyChain
                         st = activeStyle;
                     }
 
-                    if (GUILayout.Button(l.from.name + " -> " + l.to.name, st))
+                    if (GUILayout.Button(l.location.name + " -> " + l.to.name, st))
                     {
-                        selectedLink = (selectedLink == l) ? null : l;
-                        if (selectedLink != null)
+                        if (selectedLink == l)
                         {
-                            linkMassStatus = l.checkVesselMass();
-                            linkResourceStatus = l.checkVesselResources();
-                            linkPositionStatus = l.checkVesselPosition();
-                            linkOverallStatus = true;
+                            selectedLink = null;
+                            sldv = null;
+                        } else
+                        {
+                            sldv = new SupplyLinkDetailsView(l);
+                            selectedLink = l;
                         }
+
+                        stdv = null;
+                        selectedTransfer = null;
                     }
+                }
+
+                if(vd.orbitalDockingEnabled)
+                {
+                    if (GUILayout.Button("Transfer Resources", passableStyle))
+                    {
+                        if(selectedTransfer == vd)
+                        {
+                            stdv = null;
+                            selectedTransfer = null;
+                        } else
+                        {
+                            stdv = new SupplyTransferDetailsView(vd);
+                            selectedTransfer = vd;
+                        }
+
+                        sldv = null;
+                        selectedLink = null;
+                    }
+                } else
+                {
+                    GUILayout.Label("Transfer Resources from Vessel", impassableStyle);
                 }
             }
             GUILayout.EndScrollView();
 
-            if(selectedLink != null)
+            if (stdv != null)
             {
-                selectScrollPt = GUILayout.BeginScrollView(selectScrollPt);
-                
-                /* Basic data. */
-                GUILayout.BeginVertical();
-
-                GUILayout.Label("Vessel: " + selectedLink.linkVessel.vessel.name);
-                GUILayout.Label("From: " + selectedLink.from.name, linkPositionStatus ? passableLabelStyle : impassableLabelStyle);
-                GUILayout.Label("To: " + selectedLink.to.name);
-
-                GUILayout.EndVertical();
-
-                /* Requirements. */
-                GUILayout.BeginVertical();
-
-                GUILayout.Label("Requirements:");
-                GUILayout.Label("Maximum Mass: " + Convert.ToString(Math.Round(selectedLink.maxMass, 3)) + " tons", linkMassStatus ? passableLabelStyle : impassableLabelStyle);
-
-
-
-                GUILayout.Label("Time Required: " + SupplyLinkView.formatTimespan(selectedLink.timeRequired));
-
-                foreach(int rsc in linkResourceStatus.Keys)
-                {
-                    GUILayout.Label(PartResourceLibrary.Instance.GetDefinition(rsc).name + ": " + selectedLink.resourcesRequired[rsc],
-                        linkResourceStatus[rsc] ? passableLabelStyle : impassableLabelStyle);
-                }
-
-                GUILayout.EndVertical();
-
-                if(selectedLink.active)
-                {
-                    GUILayout.Label("Currently Traversing Link\nT-"+
-                        SupplyLinkView.formatTimespan(selectedLink.timeComplete - Planetarium.GetUniversalTime(), true),
-                        activeStyle
-                    );
-                } else if (linkOverallStatus)
-                {
-                    if (GUILayout.Button("Traverse Link"))
-                    {
-                        selectedLink.traverseLink();
-                    }
-                }
-
-
-                GUILayout.EndScrollView();
+                stdv.OnGUI();
+            }
+            else if (sldv != null)
+            {
+                sldv.onGUI();
             }
 
             GUILayout.EndHorizontal();
@@ -269,9 +248,6 @@ namespace SupplyChain
                 impassableStyle.normal.textColor = Color.red;
             }
 
-
-
-
             if (passableLabelStyle == null)
             {
                 passableLabelStyle = new GUIStyle("label");
@@ -292,7 +268,7 @@ namespace SupplyChain
 
             if (windowActive)
             {
-                windowPos = GUI.Window(0, windowPos, windowFunc, "Supply Links");
+                windowPos = GUI.Window(0, windowPos, windowFunc, "Supply Chain Actions");
             }
         }
 

@@ -6,13 +6,11 @@ using UnityEngine;
 
 namespace SupplyChain
 {
-    public class SupplyLink : IConfigNode
+    public class SupplyLink : SupplyChainAction, IConfigNode
     {
         public Dictionary<int, double> resourcesRequired;
-        public double timeRequired;
         public double maxMass;
-
-        public SupplyPoint from;
+        
         public SupplyPoint to;
 
         public Guid id;
@@ -26,17 +24,11 @@ namespace SupplyChain
             }
         }
 
-        public VesselData linkVessel;
-
-
-        public bool active;
-        public double timeComplete;
-
         public SupplyLink() {}
         public SupplyLink(VesselData v, SupplyPoint from, SupplyPoint to)
         {
             this.id = Guid.NewGuid();
-            this.from = from;
+            this.location = from;
             this.to = to;
 
             this.linkVessel = v;
@@ -50,7 +42,7 @@ namespace SupplyChain
 
         public bool checkVesselPosition()
         {
-            return from.isVesselAtPoint(linkVessel.vessel);
+            return location.isVesselAtPoint(linkVessel.vessel);
         }
 
         public bool checkVesselMass()
@@ -76,7 +68,7 @@ namespace SupplyChain
         }
 
 
-        public bool canTraverseLink()
+        public override bool canExecute()
         {
             return (
                 this.checkVesselPosition() &&
@@ -85,7 +77,12 @@ namespace SupplyChain
             );
         }
 
-        public void onLinkTraversed()
+        public override bool canFinish()
+        {
+            return true;
+        }
+
+        public override void finishAction()
         {
             Debug.Log("[SupplyChain] Moving vessel.");
             to.moveVesselToPoint(linkVessel.vessel);
@@ -93,9 +90,9 @@ namespace SupplyChain
             this.active = false;
         }
 
-        public bool traverseLink()
+        public override bool startAction()
         {
-            if (!canTraverseLink())
+            if (!canExecute())
                 return false;
 
             if (this.active)
@@ -113,7 +110,7 @@ namespace SupplyChain
         public void Load(ConfigNode node)
         {
             id = new Guid(node.GetValue("id"));
-            from = SupplyChainController.getPointByGuid(new Guid(node.GetValue("from")));
+            location = SupplyChainController.getPointByGuid(new Guid(node.GetValue("from")));
             to = SupplyChainController.getPointByGuid(new Guid(node.GetValue("to")));
             node.TryGetValue("timeRequired", ref timeRequired);
             node.TryGetValue("maxMass", ref maxMass);
@@ -150,7 +147,7 @@ namespace SupplyChain
         public void Save(ConfigNode node)
         {
             node.AddValue("id", id.ToString());
-            node.AddValue("from", from.id.ToString());
+            node.AddValue("from", location.id.ToString());
             node.AddValue("to", to.id.ToString());
             
             node.AddValue("linkVessel", linkVessel.trackingID);

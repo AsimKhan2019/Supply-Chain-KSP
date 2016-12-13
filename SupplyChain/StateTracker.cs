@@ -234,7 +234,7 @@ namespace SupplyChain
                 result.maxMass = flightStartingMass;
 
                 Debug.Log("[SupplyChain] Creating new supply link.");
-                Debug.Log("[SupplyChain] From: " + result.from.name);
+                Debug.Log("[SupplyChain] From: " + result.location.name);
                 Debug.Log("[SupplyChain] To: " + result.to.name);
                 Debug.Log("[SupplyChain] Total Elapsed MET: " + Convert.ToString(result.timeRequired));
                 Debug.Log("[SupplyChain] Maximum mass: " + Convert.ToString(result.maxMass));

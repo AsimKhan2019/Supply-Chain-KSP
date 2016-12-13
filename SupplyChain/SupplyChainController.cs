@@ -13,12 +13,18 @@ namespace SupplyChain
         public List<SupplyPoint> points;
         public List<SupplyLink> links;
         public List<VesselData> trackedVessels;
+        public List<SupplyChainAction> activeActions;
         
-        public static SupplyLinkView slv;
+        public static SupplyActionView slv;
         public static SupplyPointView spv;
 
         public static SupplyChainController instance;
-        
+
+        public static double updateInterval = 60; // check every 60 seconds by default.
+        private double lastUpdated;
+
+        public Dictionary<SupplyPoint, List<Vessel>> vesselsAtPoint;
+
         public override void OnAwake()
         {
             instance = this;
@@ -26,12 +32,19 @@ namespace SupplyChain
             points = new List<SupplyPoint>();
             links = new List<SupplyLink>();
             trackedVessels = new List<VesselData>();
+            activeActions = new List<SupplyChainAction>();
+            vesselsAtPoint = new Dictionary<SupplyPoint, List<Vessel>>();
             
             if(slv == null)
-                slv = new SupplyLinkView();
+                slv = new SupplyActionView();
 
             if(spv == null)
                 spv = new SupplyPointView();
+
+            lastUpdated = Planetarium.GetUniversalTime();
+
+            GameEvents.OnFlightGlobalsReady.Add(updateVesselsAtPoint);
+            GameEvents.onTimeWarpRateChanged.Add( () => { updateVesselsAtPoint(); } );
         }
 
         public void OnGUI()
@@ -42,14 +55,45 @@ namespace SupplyChain
 
         public void FixedUpdate()
         {
-            /* Check for active links. */
-            foreach(SupplyLink l in links)
+            if((Planetarium.GetUniversalTime() - lastUpdated) > SupplyChainController.updateInterval)
             {
-                if(l.active)
+                List<SupplyChainAction> finished = new List<SupplyChainAction>(); // can't modify the active actions list while iterating through it
+                foreach (SupplyChainAction act in activeActions)
                 {
-                    if(Planetarium.GetUniversalTime() >= l.timeComplete)
+                    if (Planetarium.GetUniversalTime() >= act.timeComplete && act.canFinish())
                     {
-                        l.onLinkTraversed();
+                        act.finishAction();
+                        finished.Add(act);
+                    }
+                }
+
+                foreach(SupplyChainAction act in finished)
+                {
+                    activeActions.Remove(act);
+                }
+
+                updateVesselsAtPoint();
+
+                lastUpdated = Planetarium.GetUniversalTime();
+            }
+        }
+
+        private void updateVesselsAtPoint(bool something = false)
+        {
+            vesselsAtPoint.Clear();
+
+            foreach (Vessel v in FlightGlobals.Vessels)
+            {
+                foreach (SupplyPoint p in SupplyChainController.instance.points)
+                {
+                    if (p.isVesselAtPoint(v))
+                    {
+                        if (!vesselsAtPoint.ContainsKey(p))
+                        {
+                            vesselsAtPoint.Add(p, new List<Vessel>());
+                        }
+                        vesselsAtPoint[p].Add(v);
+                        break;
                     }
                 }
             }
@@ -79,7 +123,7 @@ namespace SupplyChain
             /* Save all SupplyLinks. */
             foreach (SupplyLink link in links)
             {
-                Debug.Log("[SupplyChain] Saved supply link: " + link.from.name + " -> " + link.to.name);
+                Debug.Log("[SupplyChain] Saved supply link: " + link.location.name + " -> " + link.to.name);
                 ConfigNode linkNode = node.AddNode("SupplyLink");
                 link.Save(linkNode);
             }
@@ -145,7 +189,12 @@ namespace SupplyChain
                     SupplyLink link = new SupplyLink();
                     link.Load(linkNode);
                     links.Add(link);
-                    Debug.Log("[SupplyChain] Loaded Supply Link: " + link.from.name + " -> " + link.to.name);
+
+                    if(link.active)
+                    {
+                        activeActions.Add(link);
+                    }
+                    Debug.Log("[SupplyChain] Loaded Supply Link: " + link.location.name + " -> " + link.to.name);
                 }
             }
         }
@@ -184,14 +233,14 @@ namespace SupplyChain
         {
             SupplyChainController.instance.links.Add(link);
 
-            Debug.Log("[SupplyChain] Added new supply link from " + link.from.name + " -> " + link.to.name);
+            Debug.Log("[SupplyChain] Added new supply link from " + link.location.name + " -> " + link.to.name);
 
             return true; // TODO: maybe check for redundant points?
         }
 
         public static bool deregisterNewSupplyLink(SupplyLink link)
         {
-            Debug.Log("[SupplyChain] Removed supply link from " + link.from.name + " -> " + link.to.name);
+            Debug.Log("[SupplyChain] Removed supply link from " + link.location.name + " -> " + link.to.name);
 
             if (SupplyChainController.instance.links.Contains(link))
             {

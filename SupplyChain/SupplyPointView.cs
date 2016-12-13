@@ -13,29 +13,13 @@ namespace SupplyChain
         private bool windowActive = false;
         private ApplicationLauncherButton button = null;
         private Rect windowPos = new Rect(0, 0, 600, 600);
-
-        private Dictionary<SupplyPoint, List<Vessel>> vesselsAtPoint;
-
+        
         public SupplyPointView()
         {
             tex = GameDatabase.Instance.GetTexture("SupplyChain/Icons/SupplyPointIcon", false);
-
-            vesselsAtPoint = new Dictionary<SupplyPoint, List<Vessel>>();
-
-            GameEvents.OnFlightGlobalsReady.Add(updateVesselsAtPoint);
-
-            /*
-            GameEvents.onGUIApplicationLauncherReady.Add(addAppLauncherButton);
-
-            // one of these should work
-            GameEvents.onGUIApplicationLauncherUnreadifying.Add(destroyAppLauncherButton);
-            GameEvents.onGUIApplicationLauncherDestroyed.Add(destroyAppLauncherButton);
-            GameEvents.onGameSceneLoadRequested.Add(destroyAppLauncherButton);
-            */
-
+            
             addAppLauncherButton();
-
-            GameEvents.onTimeWarpRateChanged.Add(() => { updateVesselsAtPoint(); });
+            
         }
 
         private void addAppLauncherButton()
@@ -43,7 +27,7 @@ namespace SupplyChain
             if (button == null)
             {
                 button = ApplicationLauncher.Instance.AddModApplication(
-                    () => { updateVesselsAtPoint(); this.windowActive = true; },    // On toggle active.
+                    () => { this.windowActive = true; },    // On toggle active.
                     () => { this.windowActive = false; },   // On toggle inactive.
                     null, null, null, null,
                     ApplicationLauncher.AppScenes.SPACECENTER | ApplicationLauncher.AppScenes.TRACKSTATION | ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW, // Scenes to show in.
@@ -63,27 +47,6 @@ namespace SupplyChain
             {
                 ApplicationLauncher.Instance.RemoveModApplication(button);
                 button = null;
-            }
-        }
-
-        private void updateVesselsAtPoint(bool something = false)
-        {
-            vesselsAtPoint.Clear();
-
-            foreach (Vessel v in FlightGlobals.Vessels)
-            {
-                foreach (SupplyPoint p in SupplyChainController.instance.points)
-                {
-                    if (p.isVesselAtPoint(v))
-                    {
-                        if (!vesselsAtPoint.ContainsKey(p))
-                        {
-                            vesselsAtPoint.Add(p, new List<Vessel>());
-                        }
-                        vesselsAtPoint[p].Add(v);
-                        break;
-                    }
-                }
             }
         }
 
@@ -112,9 +75,9 @@ namespace SupplyChain
                 selectedPoint.guiDisplayData(id);
 
                 GUILayout.Label("Vessels here:");
-                if(vesselsAtPoint.ContainsKey(selectedPoint))
+                if(SupplyChainController.instance.vesselsAtPoint.ContainsKey(selectedPoint))
                 {
-                    foreach (Vessel v in vesselsAtPoint[selectedPoint])
+                    foreach (Vessel v in SupplyChainController.instance.vesselsAtPoint[selectedPoint])
                     {
                         GUILayout.Label(v.name);
                     }
