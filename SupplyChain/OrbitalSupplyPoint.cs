@@ -40,7 +40,6 @@ namespace SupplyChain
 
         public override bool isVesselAtPoint(Vessel v)
         {
-            Debug.Log("[SupplyChain] Testing " + v.name + " against " + name + ": Attempting to retrieve orbit...");
             if (v.loaded)
             {
                 Orbit curOrbit = v.GetOrbit();
