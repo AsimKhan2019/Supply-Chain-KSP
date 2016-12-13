@@ -12,7 +12,7 @@ namespace SupplyChain
         private Texture tex = null;
         private bool windowActive = false;
         private ApplicationLauncherButton button = null;
-        private Rect windowPos = new Rect(0, 0, 600, 600);
+        private Rect windowPos = new Rect(0, 0, 800, 800);
 
         private GUIStyle passableStyle;
         private GUIStyle activeStyle;
@@ -192,7 +192,7 @@ namespace SupplyChain
 
                 if(vd.orbitalDockingEnabled)
                 {
-                    if (GUILayout.Button("Transfer Resources", passableStyle))
+                    if (GUILayout.Button("Transfer Resources from Vessel", passableStyle))
                     {
                         if(selectedTransfer == vd)
                         {

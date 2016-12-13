@@ -20,7 +20,7 @@ namespace SupplyChain
 
         public static SupplyChainController instance;
 
-        public static double updateInterval = 60; // check every 60 seconds by default.
+        public static double updateInterval = 1; // check every second by default.
         private double lastUpdated;
 
         public Dictionary<SupplyPoint, List<Vessel>> vesselsAtPoint;

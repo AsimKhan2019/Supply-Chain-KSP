@@ -30,6 +30,7 @@ namespace SupplyChain
         private Vector2 viewScrollPoint;
 
         private ResourceTransferAction action = null;
+        private bool activated = false;
 
         public SupplyTransferDetailsView(VesselData selected)
         {
@@ -111,7 +112,6 @@ namespace SupplyChain
                     foreach (int rsc in combinedRscTypes)
                     {
                         GUILayout.BeginHorizontal();
-
                         if (!selectedXfers.ContainsKey(rsc))
                         {
                             selectedXfers.Add(rsc, new ResourceTransferAction.ResourceTransfer());
@@ -121,11 +121,20 @@ namespace SupplyChain
                         GUILayout.Label(PartResourceLibrary.Instance.GetDefinition(rsc).name + ": ");
                         
                         selectedXfers[rsc].type = (ResourceTransferAction.TransferType)GUILayout.SelectionGrid((int)selectedXfers[rsc].type, SupplyTransferDetailsView.resourceTransferTypeStrings, 3);
-                        
+                        GUILayout.EndHorizontal();
+
+                        try
+                        {
+                            selectedXfers[rsc].amount = Convert.ToDouble(GUILayout.TextField(selectedXfers[rsc].amount.ToString()));
+                        } catch(FormatException e)
+                        {
+                            selectedXfers[rsc].amount = 0.0;
+                        }
+
                         selectedXfers[rsc].amount = GUILayout.HorizontalSlider(
                             (float)selectedXfers[rsc].amount, 0, (orgCurResources[rsc] > tgtMaxResources[rsc]) ? (float)tgtMaxResources[rsc] : (float)orgCurResources[rsc]);
 
-                        GUILayout.EndHorizontal();
+                        
                     }
 
                     if (action != null && action.active)

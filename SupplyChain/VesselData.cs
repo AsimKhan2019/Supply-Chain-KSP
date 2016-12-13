@@ -329,7 +329,7 @@ namespace SupplyChain
          * True = set resource to max
          * False = set resource to empty
          */
-        public void setResourceToExtreme(int resource, bool minMax)
+        public void setResourceToExtreme(int resource, bool setToMax)
         {
             if (vessel.loaded)
             {
@@ -339,7 +339,7 @@ namespace SupplyChain
                     {
                         if (r.info.id == resource)
                         {
-                            if (minMax)
+                            if (setToMax)
                             {
                                 r.amount = r.maxAmount;
                             }
@@ -359,7 +359,7 @@ namespace SupplyChain
                     {
                         if (r.definition.id == resource)
                         {
-                            if (minMax)
+                            if (setToMax)
                             {
                                 r.amount = r.maxAmount;
                             }
@@ -435,7 +435,7 @@ namespace SupplyChain
                             }
                             else
                             {
-                                if ((p.maxAmount - p.amount) <= changePerPart)
+                                if ((p.maxAmount - p.amount) >= Math.Abs(changePerPart))
                                 {
                                     p.amount += Math.Abs(changePerPart);
                                     remaining -= Math.Abs(changePerPart);
@@ -451,7 +451,16 @@ namespace SupplyChain
                         }
                         else
                         {
-                            p.amount -= remaining;
+                            if(changePerPart > 0)
+                            {
+                                p.amount -= remaining;
+                            } else
+                            {
+                                p.amount += remaining;
+                            }
+
+                            remaining = 0;
+                            
                             changed = true;
                             break;
                         }
@@ -515,7 +524,7 @@ namespace SupplyChain
                             }
                             else
                             {
-                                if ((p.maxAmount - p.amount) <= changePerPart)
+                                if ((p.maxAmount - p.amount) >= Math.Abs(changePerPart))
                                 {
                                     p.amount += Math.Abs(changePerPart);
                                     remaining -= Math.Abs(changePerPart);
@@ -531,7 +540,17 @@ namespace SupplyChain
                         }
                         else
                         {
-                            p.amount -= remaining;
+                            if (changePerPart > 0)
+                            {
+                                p.amount -= remaining;
+                            }
+                            else
+                            {
+                                p.amount += remaining;
+                            }
+
+                            remaining = 0;
+
                             changed = true;
                             break;
                         }

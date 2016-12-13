@@ -33,6 +33,7 @@ namespace SupplyChain
         public ResourceTransferAction(VesselData origin, VesselData target,
             List<ResourceTransfer> toOrigin, List<ResourceTransfer> toTarget)
         {
+            this.linkVessel = origin;
             this.targetVessel = target;
             this.timeRequired = 3600; // 1 hour
             this.toTarget = toTarget;
