@@ -279,6 +279,11 @@ namespace SupplyChain
             return SupplyChainController.instance.trackedVessels.Find((VesselData vd) => { return (vd.vesselID.Equals(v.id)); });
         }
 
+        public static VesselData getVesselTrackingInfo(Guid trackingID)
+        {
+            return SupplyChainController.instance.trackedVessels.Find((VesselData vd) => { return (vd.vesselID.Equals(trackingID)); });
+        }
+
         public static bool isVesselTracked(Vessel v)
         {
             return SupplyChainController.instance.trackedVessels.Exists((VesselData vd) => { return (vd.vesselID.Equals(v.id)); });

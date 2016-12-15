@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SupplyChain
 {
-    public abstract class SupplyChainAction
+    public abstract class SupplyChainAction : IConfigNode
     {
         public double timeRequired;
         public SupplyPoint location;
@@ -19,5 +19,8 @@ namespace SupplyChain
         
         public abstract bool canExecute();
         public abstract bool canFinish();
+
+        public abstract void Load(ConfigNode node);
+        public abstract void Save(ConfigNode node);
     }
 }

@@ -35,10 +35,22 @@ namespace SupplyChain
         {
             this.linkVessel = origin;
             this.targetVessel = target;
+
             this.timeRequired = 3600; // 1 hour
+
             this.toTarget = toTarget;
             this.toOrigin = toOrigin;
 
+            calculateRequirements();
+        }
+
+        public ResourceTransferAction()
+        {
+            this.timeRequired = 3600;
+        }
+
+        private void calculateRequirements()
+        {
             targetRequirements = new Dictionary<int, double>();
             originRequirements = new Dictionary<int, double>();
 
@@ -58,7 +70,6 @@ namespace SupplyChain
                 }
             }
         }
-
         public override bool canExecute()
         {
             /* Find target vessel location. */
@@ -151,6 +162,104 @@ namespace SupplyChain
                     linkVessel.modifyResource(xfer.resourceID, -1 * cur);
                     targetVessel.setResourceToExtreme(xfer.resourceID, false);
                 }
+            }
+        }
+
+        public override void Load(ConfigNode node)
+        {
+            this.linkVessel = SupplyChainController.getVesselTrackingInfo(new Guid(node.GetValue("origin")));
+
+            bool targetTracked = false;
+            node.TryGetValue("targetTracked", ref targetTracked);
+
+            if(targetTracked)
+            {
+                this.targetVessel = SupplyChainController.getVesselTrackingInfo(new Guid(node.GetValue("target")));
+            } else
+            {
+                if(node.HasValue("target"))
+                {
+                    this.targetVessel = null;
+                } else
+                {
+                    VesselData targetData = new VesselData();
+                    targetData.Load(node.GetNode("targetData"));
+                    this.targetVessel = targetData;
+                }
+            }
+
+            ConfigNode[] xferNodes = node.GetNodes("Transfer");
+            foreach(ConfigNode xferNode in xferNodes)
+            {
+                ResourceTransfer xfer = new ResourceTransfer();
+
+                string destination = xferNode.GetValue("destination");
+
+                xferNode.TryGetValue("resourceID", ref xfer.resourceID);
+                xferNode.TryGetValue("amount", ref xfer.amount);
+
+                int xferType = 0;
+                xferNode.TryGetValue("type", ref xferType);
+
+                xfer.type = (TransferType)xferType;
+
+                if(destination == "origin")
+                {
+                    toOrigin.Add(xfer);
+                } else if(destination == "target")
+                {
+                    toTarget.Add(xfer);
+                } else
+                {
+                    Debug.LogError("[SupplyChain] ResourceTransferAction: Got invalid destination!");
+                }
+            }
+
+            calculateRequirements();
+        }
+
+        public override void Save(ConfigNode node)
+        {
+            /* Save vessel IDs first.
+             * The target VesselData might not be registered with SupplyChainController,
+             * so check for that. */
+            node.AddValue("type", "ResourceTransfer");
+
+            node.AddValue("origin", this.linkVessel.trackingID.ToString());
+            if(targetVessel == null || targetVessel.vessel == null)
+            {
+                node.AddValue("targetTracked", false);
+                node.AddValue("target", "none");
+            } else
+            {
+                if(SupplyChainController.isVesselTracked(targetVessel.vessel))
+                {
+                    node.AddValue("targetTracked", true);
+                    node.AddValue("target", targetVessel.trackingID.ToString());
+                } else
+                {
+                    node.AddValue("targetTracked", false);
+                    ConfigNode tgtNode = node.AddNode("targetData");
+                    targetVessel.Save(tgtNode);
+                }
+            }
+
+            /* Save the actual transfer data next. */
+            foreach(ResourceTransfer xfer in this.toOrigin) {
+                ConfigNode xferNode = node.AddNode("Transfer");
+                xferNode.AddValue("destination", "origin");
+                xferNode.AddValue("resourceID", xfer.resourceID);
+                xferNode.AddValue("amount", xfer.amount);
+                xferNode.AddValue("type", (int)xfer.type);
+            }
+
+            foreach (ResourceTransfer xfer in this.toTarget)
+            {
+                ConfigNode xferNode = node.AddNode("Transfer");
+                xferNode.AddValue("destination", "target");
+                xferNode.AddValue("resourceID", xfer.resourceID);
+                xferNode.AddValue("amount", xfer.amount);
+                xferNode.AddValue("type", (int)xfer.type);
             }
         }
     }
