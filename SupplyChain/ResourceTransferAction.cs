@@ -139,12 +139,25 @@ namespace SupplyChain
                 {
                     targetVessel.modifyResource(xfer.resourceID, -1*xfer.amount);
                     linkVessel.modifyResource(xfer.resourceID, xfer.amount);
-                } else if(xfer.type == TransferType.TRANSFER_ALL || xfer.type == TransferType.TRANSFER_AMOUNT)
+                }
+                else if (xfer.type == TransferType.TRANSFER_ALL || xfer.type == TransferType.TRANSFER_AMOUNT)
                 {
-                    double cur = 0, max = 0;
-                    linkVessel.getResourceCount(xfer.resourceID, out cur, out max);
-                    targetVessel.modifyResource(xfer.resourceID, -1 * cur);
-                    linkVessel.setResourceToExtreme(xfer.resourceID, false);
+                    double tgtCur = 0, tgtMax = 0;
+                    targetVessel.getResourceCount(xfer.resourceID, out tgtCur, out tgtMax);
+
+                    double orgCur = 0, orgMax = 0;
+                    linkVessel.getResourceCount(xfer.resourceID, out orgCur, out orgMax);
+
+                    if (orgCur > tgtMax)
+                    {
+                        targetVessel.setResourceToExtreme(xfer.resourceID, true);
+                        linkVessel.modifyResource(xfer.resourceID, tgtMax - tgtCur);
+                    }
+                    else
+                    {
+                        targetVessel.modifyResource(xfer.resourceID, -1 * tgtCur);
+                        linkVessel.setResourceToExtreme(xfer.resourceID, false);
+                    }
                 }
             }
 
@@ -157,10 +170,21 @@ namespace SupplyChain
                 }
                 else if (xfer.type == TransferType.TRANSFER_ALL || xfer.type == TransferType.TRANSFER_AMOUNT)
                 {
-                    double cur = 0, max = 0;
-                    targetVessel.getResourceCount(xfer.resourceID, out cur, out max);
-                    linkVessel.modifyResource(xfer.resourceID, -1 * cur);
-                    targetVessel.setResourceToExtreme(xfer.resourceID, false);
+                    double tgtCur = 0, tgtMax = 0;
+                    targetVessel.getResourceCount(xfer.resourceID, out tgtCur, out tgtMax);
+
+                    double orgCur = 0, orgMax = 0;
+                    linkVessel.getResourceCount(xfer.resourceID, out orgCur, out orgMax);
+
+                    if(tgtCur > orgMax)
+                    {
+                        linkVessel.setResourceToExtreme(xfer.resourceID, true);
+                        targetVessel.modifyResource(xfer.resourceID, orgMax - orgCur);
+                    } else /* orgMax > tgtCur */
+                    {
+                        linkVessel.modifyResource(xfer.resourceID, -1 * tgtCur); // add all of current resource on target to origin
+                        targetVessel.setResourceToExtreme(xfer.resourceID, false);
+                    }   
                 }
             }
         }

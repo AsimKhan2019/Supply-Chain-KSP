@@ -114,13 +114,13 @@ namespace SupplyChain
                     ret += days.ToString("D2");
 
                 if (hours > 0)
-                    ret += ((ret.Length > 0) ? ":" : "") + hours.ToString("D2") + "";
+                    ret += ((ret.Length > 0) ? ":" : "") + hours.ToString("D2") + "h";
 
                 if (minutes > 0)
-                    ret += ((ret.Length > 0) ? ":" : "") + minutes.ToString("D2") + "";
+                    ret += ((ret.Length > 0) ? ":" : "") + minutes.ToString("D2") + "m";
 
                 if (t > 0)
-                    ret += ((ret.Length > 0) ? ":" : "") + t.ToString("D2") + "";
+                    ret += ((ret.Length > 0) ? ":" : "") + t.ToString("D2") + "s";
             }
             else
             {
