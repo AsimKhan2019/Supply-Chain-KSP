@@ -44,6 +44,15 @@ namespace SupplyChain
             calculateRequirements();
         }
 
+        public ResourceTransferAction(VesselData origin)
+        {
+            this.linkVessel = origin;
+            this.timeRequired = 3600;
+
+            this.toTarget = new List<ResourceTransfer>();
+            this.toOrigin = new List<ResourceTransfer>();
+        }
+
         public ResourceTransferAction()
         {
             this.timeRequired = 3600;
@@ -72,6 +81,11 @@ namespace SupplyChain
         }
         public override bool canExecute()
         {
+            if(targetVessel == null || targetVessel.vessel == null)
+            {
+                return false;
+            }
+
             /* Find target vessel location. */
             SupplyPoint targetLocation = targetVessel.currentLocation;
 
@@ -88,6 +102,8 @@ namespace SupplyChain
 
         public override bool canFinish()
         {
+            calculateRequirements();
+
             Dictionary<int, bool> targetStatus = targetVessel.checkResources(targetRequirements);
             Dictionary<int, bool> originStatus = linkVessel.checkResources(originRequirements);
             
