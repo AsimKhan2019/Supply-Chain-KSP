@@ -9,6 +9,42 @@ namespace SupplyChain
     public class ActionSequence : IConfigNode
     {
         public List<SupplyChainAction> sequence;
+        public int currentIndex;
+        public bool active;
+
+        /* each List<SequenceCondition> represents a set of conditions that must
+         * all be met for that condition set to be true.
+         * 
+         * If any condition set is true then the whole sequence will fire.
+         */ 
+        public List<List<SequenceCondition>> conditions;
+
+        public bool canExecute()
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool checkConditions()
+        {
+            foreach(List<SequenceCondition> conditionSet in conditions)
+            {
+                bool status = true;
+                foreach(SequenceCondition condition in conditionSet)
+                {
+                    status = status && condition.check();
+                }
+
+                if(status)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public void startSequence()
+        {
+            throw new NotImplementedException();
+        }
 
         public void Load(ConfigNode node)
         {

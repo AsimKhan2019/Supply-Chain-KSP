@@ -107,7 +107,7 @@ namespace SupplyChain
             return true;
         }
 
-        public void Load(ConfigNode node)
+        public override void Load(ConfigNode node)
         {
             id = new Guid(node.GetValue("id"));
             location = SupplyChainController.getPointByGuid(new Guid(node.GetValue("from")));
@@ -144,7 +144,7 @@ namespace SupplyChain
             }
         }
 
-        public void Save(ConfigNode node)
+        public override void Save(ConfigNode node)
         {
             node.AddValue("id", id.ToString());
             node.AddValue("from", location.id.ToString());

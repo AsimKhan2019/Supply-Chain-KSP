@@ -11,6 +11,8 @@ namespace SupplyChain
         public SupplyPoint location;
         public VesselData linkVessel;
 
+        public List<Action<SupplyChainAction>> onComplete;
+
         public bool active;
         public double timeComplete; // UT for action completion
 
