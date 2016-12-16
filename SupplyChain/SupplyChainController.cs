@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using SupplyChain.UI;
 
 namespace SupplyChain
 {
@@ -14,9 +15,6 @@ namespace SupplyChain
         public List<SupplyLink> links;
         public List<VesselData> trackedVessels;
         public List<SupplyChainAction> activeActions;
-        
-        public static SupplyActionView slv;
-        public static SupplyPointView spv;
 
         public static SupplyChainController instance;
 
@@ -34,23 +32,22 @@ namespace SupplyChain
             trackedVessels = new List<VesselData>();
             activeActions = new List<SupplyChainAction>();
             vesselsAtPoint = new Dictionary<SupplyPoint, List<Vessel>>();
-            
-            if(slv == null)
-                slv = new SupplyActionView();
-
-            if(spv == null)
-                spv = new SupplyPointView();
 
             lastUpdated = Planetarium.GetUniversalTime();
 
             GameEvents.OnFlightGlobalsReady.Add(updateVesselsAtPoint);
             GameEvents.onTimeWarpRateChanged.Add( () => { updateVesselsAtPoint(); } );
+
+            SupplyBaseWindow.initAllWindows();
         }
 
         public void OnGUI()
         {
-            slv.OnGUI();
-            spv.OnGUI();
+            UI.UIStyle.init();
+
+            SupplyPointWindow.instance.drawWindow();
+            OneshotEditorWindow.instance.drawWindow();
+            SupplyStatusWindow.instance.drawWindow();
         }
 
         public void FixedUpdate()
@@ -78,6 +75,7 @@ namespace SupplyChain
                 }
 
                 updateVesselsAtPoint();
+                SupplyBaseWindow.updateAllWindows();
 
                 lastUpdated = Planetarium.GetUniversalTime();
             }

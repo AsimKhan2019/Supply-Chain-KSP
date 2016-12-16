@@ -31,6 +31,12 @@ namespace SupplyChain.UI
                 if (!l.active && l.canExecute())
                     traversableLinks.Add(l);
             }
+
+            if (selectedLink != null)
+                selectedLink.onUpdate();
+
+            if (selectedTransfer != null)
+                selectedTransfer.onUpdate();
         }
         private Vector2 scrollPoint;
 

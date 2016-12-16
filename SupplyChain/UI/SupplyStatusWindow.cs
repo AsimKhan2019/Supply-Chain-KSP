@@ -195,6 +195,11 @@ namespace SupplyChain.UI
                     activeActionViews.Add(ActionStatusView.getActionDetailsView(activeAction));
                 }
             }
+
+            foreach(ActionStatusView view in activeActionViews)
+            {
+                view.onUpdate();
+            }
         }
 
         public override void windowInternals(int id)

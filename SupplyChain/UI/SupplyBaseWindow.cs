@@ -63,14 +63,31 @@ namespace SupplyChain.UI
         
         public void drawWindow()
         {
-            this.windowPos = GUI.Window(this.windowID, this.windowPos,
-                (int id) =>
-                {
-                    this.windowInternals(id);
-                    GUI.DragWindow();
-                },
-                this.windowName
-            );
+            if(this.windowActive)
+            {
+                this.windowPos = GUI.Window(this.windowID, this.windowPos,
+                    (int id) =>
+                    {
+                        this.windowInternals(id);
+                        GUI.DragWindow();
+                    },
+                    this.windowName
+                );
+            }
+        }
+
+        public static void updateAllWindows()
+        {
+            SupplyPointWindow.instance.onUpdate();
+            SupplyStatusWindow.instance.onUpdate();
+            OneshotEditorWindow.instance.onUpdate();
+        }
+
+        public static void initAllWindows()
+        {
+            SupplyPointWindow.instance.initWindow();
+            SupplyStatusWindow.instance.initWindow();
+            OneshotEditorWindow.instance.initWindow();
         }
     }
 }
