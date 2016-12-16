@@ -301,6 +301,35 @@ namespace SupplyChain
             return rscTypes;
         }
 
+        public void getAllResourceCounts(out Dictionary<int, double> currentCounts, out Dictionary<int, double> maxCounts)
+        {
+            currentCounts = new Dictionary<int, double>();
+            maxCounts = new Dictionary<int, double>();
+
+            if (vessel.loaded)
+            {
+                foreach (Part p in this.vessel.parts)
+                {
+                    foreach (PartResource r in p.Resources)
+                    {
+                        currentCounts[r.info.id] += r.amount;
+                        maxCounts[r.info.id] += r.maxAmount;
+                    }
+                }
+            }
+            else
+            {
+                foreach (ProtoPartSnapshot snap in vessel.protoVessel.protoPartSnapshots)
+                {
+                    foreach (ProtoPartResourceSnapshot rsc_snap in snap.resources)
+                    {
+                        currentCounts[rsc_snap.definition.id] += rsc_snap.amount;
+                        maxCounts[rsc_snap.definition.id] += rsc_snap.maxAmount;
+                    }
+                }
+            }
+        }
+
         public Dictionary<int, bool> checkResources(Dictionary<int, double> resources, bool checkMax=false)
         {
             Dictionary<int, bool> ret = new Dictionary<int, bool>();
@@ -578,6 +607,8 @@ namespace SupplyChain
 
         public void periodicUpdate()
         {
+            this.currentLocation = null;
+
             foreach (SupplyPoint pt in SupplyChainController.instance.points)
             {
                 if (pt.isVesselAtPoint(this.vessel))

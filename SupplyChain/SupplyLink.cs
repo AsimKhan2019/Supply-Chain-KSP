@@ -104,6 +104,9 @@ namespace SupplyChain
             this.active = true;
             this.timeComplete = Planetarium.GetUniversalTime() + this.timeRequired;
 
+            if(!SupplyChainController.instance.activeActions.Contains(this))
+                SupplyChainController.instance.activeActions.Add(this);
+
             return true;
         }
 

@@ -12,11 +12,23 @@ namespace SupplyChain.UI
      */
     public abstract class ActionStatusView
     {
-        public abstract bool drawButton();
-        public abstract bool drawEditorWindow();
+        public SupplyChainAction action;
+
+        public abstract bool drawSelectorButton();
+        public abstract bool drawStatusWindow();
+        public abstract void onUpdate();
 
         public static ActionStatusView getActionDetailsView(SupplyChainAction action)
         {
+            if (action.GetType() == typeof(SupplyLink))
+            {
+                return new SupplyLinkStatus((SupplyLink)action);
+            }
+            else if (action.GetType() == typeof(ResourceTransferAction))
+            {
+                return new ResourceTransferStatus((ResourceTransferAction)action);
+            }
+
             return null;
         }
     }

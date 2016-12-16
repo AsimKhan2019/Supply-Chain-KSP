@@ -12,6 +12,9 @@ namespace SupplyChain.UI
      */
     public abstract class ActionEditorView
     {
+        /* The action this view edits. */
+        public SupplyChainAction action;
+
         /* Returns true when button pressed (like GUI.Button). 
          * Should be at most two lines wide.
          */

@@ -16,11 +16,12 @@ namespace SupplyChain.UI
         private Dictionary<int, double> tgtCurResources;
         private Dictionary<int, double> tgtMaxResources;
 
+        public new ResourceTransferAction action;
+
         private static string[] resourceTransferTypeStrings = { "Transfer At Most", "Transfer All", "Transfer At Least" };
 
         private Vector2 viewScrollPoint;
 
-        private ResourceTransferAction action = null;
         private VesselData target = null;
 
         public ResourceTransferEditor(VesselData selected)
@@ -188,7 +189,7 @@ namespace SupplyChain.UI
             return GUILayout.Button("Resource Transfer: " +
                 action.linkVessel.vessel.name +
                 " -> " +
-                ((action.targetVessel != null) ? action.targetVessel.vessel.name : "[Unknown]") +
+                ((action.targetVessel != null && action.targetVessel.vessel != null) ? action.targetVessel.vessel.name : "[Unknown]") +
                 "\n(" + resourceNames + ")"
             );
         }

@@ -14,8 +14,9 @@ namespace SupplyChain.UI
      */
     public class SupplyLinkEditor : ActionEditorView
     {
-        private SupplyLink action;
         private Vector2 viewScrollPoint;
+
+        public new SupplyLink action;
 
         public SupplyLinkEditor(SupplyLink selected)
         {

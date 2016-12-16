@@ -54,13 +54,17 @@
     <Compile Include="SupplyChainController.cs" />
     <Compile Include="UI\ActionEditorView.cs" />
     <Compile Include="UI\ActionStatusView.cs" />
+    <Compile Include="UI\ResourceTransferStatus.cs" />
+    <Compile Include="UI\OneshotEditorWindow.cs" />
     <Compile Include="UI\SequencerWindow.cs" />
-    <Compile Include="UI\SupplyLinkDetailsView.cs" />
+    <Compile Include="UI\SupplyBaseWindow.cs" />
+    <Compile Include="UI\SupplyLinkStatus.cs" />
     <Compile Include="UI\SupplyLinkEditor.cs" />
-    <Compile Include="UI\SupplyPointView.cs" />
+    <Compile Include="UI\SupplyPointWindow.cs" />
     <Compile Include="SupplyLink.cs" />
     <Compile Include="SupplyPoint.cs" />
     <Compile Include="UI\ResourceTransferEditor.cs" />
+    <Compile Include="UI\SupplyStatusWindow.cs" />
     <Compile Include="UI\UIStyle.cs" />
     <Compile Include="VesselData.cs" />
   </ItemGroup>

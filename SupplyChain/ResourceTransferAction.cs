@@ -138,7 +138,8 @@ namespace SupplyChain
             this.active = true;
             this.timeComplete = (Planetarium.GetUniversalTime() + this.timeRequired);
 
-            SupplyChainController.instance.activeActions.Add(this);
+            if (!SupplyChainController.instance.activeActions.Contains(this))
+                SupplyChainController.instance.activeActions.Add(this);
 
             return true;
         }
