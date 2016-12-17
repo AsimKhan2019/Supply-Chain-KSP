@@ -312,6 +312,12 @@ namespace SupplyChain
                 {
                     foreach (PartResource r in p.Resources)
                     {
+                        if(!currentCounts.ContainsKey(r.info.id))
+                        {
+                            currentCounts.Add(r.info.id, 0);
+                            maxCounts.Add(r.info.id, 0);
+                        }
+
                         currentCounts[r.info.id] += r.amount;
                         maxCounts[r.info.id] += r.maxAmount;
                     }
@@ -323,6 +329,12 @@ namespace SupplyChain
                 {
                     foreach (ProtoPartResourceSnapshot rsc_snap in snap.resources)
                     {
+                        if (!currentCounts.ContainsKey(rsc_snap.definition.id))
+                        {
+                            currentCounts.Add(rsc_snap.definition.id, 0);
+                            maxCounts.Add(rsc_snap.definition.id, 0);
+                        }
+
                         currentCounts[rsc_snap.definition.id] += rsc_snap.amount;
                         maxCounts[rsc_snap.definition.id] += rsc_snap.maxAmount;
                     }

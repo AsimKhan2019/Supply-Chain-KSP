@@ -16,7 +16,11 @@ namespace SupplyChain.UI
         public static GUIStyle impassableLabelStyle;
         public static GUIStyle activeLabelStyle;
 
+        public static GUIStyle headingLabelStyle;
+
         public static UIStyle instance;
+
+        public static float separatorSpacing = 25; // for separating headings / groups (i.e. in SupplyStatusWindow)
 
         public static void init()
         {
@@ -41,6 +45,9 @@ namespace SupplyChain.UI
 
                 impassableLabelStyle = new GUIStyle("label");
                 impassableLabelStyle.normal.textColor = Color.red;
+
+                headingLabelStyle = new GUIStyle("label");
+                headingLabelStyle.alignment = TextAnchor.MiddleCenter;
             }
         }
 
@@ -76,7 +83,7 @@ namespace SupplyChain.UI
             if (smallForm)
             {
                 if (days > 0)
-                    ret += days.ToString("D2");
+                    ret += days.ToString("D2") + "d";
 
                 if (hours > 0)
                     ret += ((ret.Length > 0) ? ":" : "") + hours.ToString("D2") + "h";

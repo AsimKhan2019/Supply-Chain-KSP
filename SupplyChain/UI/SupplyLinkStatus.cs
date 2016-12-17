@@ -94,7 +94,7 @@ namespace SupplyChain.UI
             }
             else
             {
-                GUILayout.Label(l.location.name + "-> " + l.to.name);
+                GUILayout.Label(l.location.name + " -> " + l.to.name);
             }
         }
 

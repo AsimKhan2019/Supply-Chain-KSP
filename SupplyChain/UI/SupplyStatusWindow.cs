@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using KSP.UI.Screens;
 
 namespace SupplyChain.UI
 {
@@ -36,6 +37,11 @@ namespace SupplyChain.UI
         {
             if (activeActionViews == null)
                 activeActionViews = new List<ActionStatusView>();
+
+            this.toolbarIconURL = "SupplyChain/Icons/SupplyStatusIcon";
+            this.windowName = "Supply Status";
+            this.windowPos = new Rect(0, 0, 600, 600);
+            this.activeScenes = ApplicationLauncher.AppScenes.SPACECENTER | ApplicationLauncher.AppScenes.TRACKSTATION | ApplicationLauncher.AppScenes.MAPVIEW | ApplicationLauncher.AppScenes.FLIGHT;
         }
 
         public void showActiveActions()
@@ -71,12 +77,15 @@ namespace SupplyChain.UI
                 if(selectedVesselData.vessel != null)
                 {
                     /* Vessel Info: */
-                    GUILayout.Label(selectedVesselData.vessel.name + ":");
+                    GUILayout.Label(selectedVesselData.vessel.name + ":", UIStyle.headingLabelStyle);
 
-                    /* Vessel Mass: */
+                    GUILayout.Space(UIStyle.separatorSpacing);
+
+                    /* Basic info */
+                    GUILayout.Label("Basic Information:", UIStyle.headingLabelStyle);
                     if (selectedVesselData.vessel.loaded)
                     {
-                        GUILayout.Label("Mass: " + selectedVesselData.vessel.totalMass.ToString());
+                        GUILayout.Label("Mass: " + Math.Round(selectedVesselData.vessel.totalMass, 5).ToString() + " tons");
                         GUILayout.Label("Crew: " + selectedVesselData.vessel.GetCrewCount().ToString());
                         if (selectedVesselData.currentLocation != null)
                         {
@@ -112,9 +121,13 @@ namespace SupplyChain.UI
                         }
                     }
 
-                    /* Vessel Resources: */
+                    /* Vessel Resources */
                     Dictionary<int, double> currentResourceCounts;
                     Dictionary<int, double> maxResourceCounts;
+
+                    GUILayout.Space(UIStyle.separatorSpacing);
+
+                    GUILayout.Label("Vessel Resources:", UIStyle.headingLabelStyle);
 
                     selectedVesselData.getAllResourceCounts(out currentResourceCounts, out maxResourceCounts);
                     foreach(int rscID in maxResourceCounts.Keys)
@@ -125,8 +138,11 @@ namespace SupplyChain.UI
                         );
                     }
 
+                    GUILayout.Space(UIStyle.separatorSpacing);
+
                     /* Vessel Capabilities: */
-                    if(selectedVesselData.orbitalDockingEnabled)
+                    GUILayout.Label("Vessel Capabilities:", UIStyle.headingLabelStyle);
+                    if (selectedVesselData.orbitalDockingEnabled)
                     {
                         GUILayout.Label("Orbital Resource Transfer Enabled", UIStyle.passableLabelStyle);
                     } else
@@ -134,8 +150,11 @@ namespace SupplyChain.UI
                         GUILayout.Label("Orbital Resource Transfer Disabled", UIStyle.impassableLabelStyle);
                     }
 
+                    GUILayout.Space(UIStyle.separatorSpacing);
+
                     /* Vessel Supply Links */
-                    foreach(SupplyLink l in selectedVesselData.links)
+                    GUILayout.Label("Vessel Supply Links:", UIStyle.headingLabelStyle);
+                    foreach (SupplyLink l in selectedVesselData.links)
                     {
                         SupplyLinkStatus.drawStatusLabel(l);
                     }
@@ -154,7 +173,7 @@ namespace SupplyChain.UI
                     if(vd.vessel != null)
                     {
                         if (GUILayout.Button(
-                            vd.vessel.name + " (MET" + UIStyle.formatTimespan(Math.Round(vd.vessel.missionTime), true).ToString() + ")"
+                            vd.vessel.name + " (MET T+" + UIStyle.formatTimespan(Math.Round(vd.vessel.missionTime), true).ToString() + ")"
                         ))
                         { 
                             selectedVesselData = vd;

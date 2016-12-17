@@ -27,6 +27,9 @@ namespace SupplyChain.UI
         {
             viewScrollPoint = GUILayout.BeginScrollView(viewScrollPoint);
 
+            GUILayout.BeginVertical();
+
+            GUILayout.Label("Supply Link:");
             GUILayout.Label("Vessel: " + action.linkVessel.vessel.name);
             GUILayout.Label("From: " + action.location.name);
             GUILayout.Label("To: " + action.to.name);
@@ -50,6 +53,8 @@ namespace SupplyChain.UI
             {
                 return true;
             }
+
+            GUILayout.EndVertical();
 
             GUILayout.EndScrollView();
 

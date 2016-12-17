@@ -9,6 +9,22 @@ namespace SupplyChain.UI
 {
     public class OneshotEditorWindow : SupplyBaseWindow
     {
+        private static OneshotEditorWindow actualInstance = null;
+        public new static OneshotEditorWindow instance
+        {
+            get
+            {
+                if (actualInstance == null)
+                {
+                    actualInstance = new OneshotEditorWindow();
+                }
+
+                return actualInstance;
+            }
+
+            set { }
+        }
+
         private HashSet<SupplyLink> traversableLinks;
         
         public OneshotEditorWindow()
@@ -79,7 +95,7 @@ namespace SupplyChain.UI
                     selectedLink = null;
                 }
 
-                if (drawActionFireButton(selectedLink.action))
+                if (selectedLink != null && drawActionFireButton(selectedLink.action))
                 {
                     selectedLink = null;
                 }
@@ -90,7 +106,7 @@ namespace SupplyChain.UI
                     selectedTransfer = null;
                 }
 
-                if(drawActionFireButton(selectedTransfer.action))
+                if(selectedTransfer != null && drawActionFireButton(selectedTransfer.action))
                 {
                     selectedTransfer = null;
                 }

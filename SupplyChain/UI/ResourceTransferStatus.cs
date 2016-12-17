@@ -89,18 +89,31 @@ namespace SupplyChain.UI
 
             if(action.targetVessel != null && action.targetVessel.vessel != null)
             {
-                GUILayout.Label("Resources Transferred to Target " + action.targetVessel.vessel.name + ":");
+                if (action.toTarget.Count == 0)
+                {
+                    GUILayout.Label("No resources transferred to target " + action.targetVessel.vessel.name + ".");
+                } else
+                {
+                    GUILayout.Label("Resources Transferred to Target " + action.targetVessel.vessel.name + ":");
 
-                foreach(ResourceTransferAction.ResourceTransfer xfer in action.toTarget)
+                    foreach (ResourceTransferAction.ResourceTransfer xfer in action.toTarget)
+                    {
+                        displayResourceTransferType(xfer);
+                    }
+                }
+                    
+            }
+
+            if(action.toOrigin.Count == 0)
+            {
+                GUILayout.Label("No resources transferred to origin " + action.linkVessel.vessel.name + ".");
+            } else
+            {
+                GUILayout.Label("Resources Transferred to Origin " + action.linkVessel.vessel.name + ": ");
+                foreach (ResourceTransferAction.ResourceTransfer xfer in action.toOrigin)
                 {
                     displayResourceTransferType(xfer);
                 }
-            }
-
-            GUILayout.Label("Resources Transferred to Origin " + action.linkVessel.vessel.name + ": ");
-            foreach(ResourceTransferAction.ResourceTransfer xfer in action.toOrigin)
-            {
-                displayResourceTransferType(xfer);
             }
 
             GUILayout.EndVertical();
