@@ -35,7 +35,7 @@ namespace SupplyChain
             double pe = ((1 - ecc) * sma) - soi.Radius;
             double ap = ((1 + ecc) * sma) - soi.Radius;
 
-            name = Convert.ToString(Math.Round(pe)) + " x " + Convert.ToString(Math.Round(ap)) + " (" + Convert.ToString(Math.Round(inc)) + " degrees inc.) @ " + soi.name;
+            name = Convert.ToString(Math.Round(pe)) + " x " + Convert.ToString(Math.Round(ap)) + " m (" + Convert.ToString(Math.Round(inc)) + " degrees inc.) @ " + soi.name;
         }
 
         public override bool isVesselAtPoint(Vessel v)
