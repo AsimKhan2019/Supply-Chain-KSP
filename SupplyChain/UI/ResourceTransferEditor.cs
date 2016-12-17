@@ -9,6 +9,7 @@ namespace SupplyChain.UI
     public class ResourceTransferEditor : ActionEditorView
     {
         private Dictionary<int, ResourceTransferAction.ResourceTransfer> selectedXfers = null;
+        private Dictionary<int, bool> xferDirections = null; // false = to target, true = to origin
 
         private Dictionary<int, double> orgCurResources;
         private Dictionary<int, double> orgMaxResources;
@@ -92,6 +93,7 @@ namespace SupplyChain.UI
                         onUpdate();
 
                         selectedXfers = new Dictionary<int, ResourceTransferAction.ResourceTransfer>();
+                        xferDirections = new Dictionary<int, bool>();
                     }
                 }
 
@@ -112,15 +114,23 @@ namespace SupplyChain.UI
                     foreach (int rsc in combinedRscTypes)
                     {
                         GUILayout.BeginHorizontal();
+
                         if (!selectedXfers.ContainsKey(rsc))
                         {
                             selectedXfers.Add(rsc, new ResourceTransferAction.ResourceTransfer());
                             selectedXfers[rsc].resourceID = rsc;
+
+                            xferDirections.Add(rsc, false);
                         }
                         
                         GUILayout.Label(PartResourceLibrary.Instance.GetDefinition(rsc).name + ": ");
                         
                         selectedXfers[rsc].type = (ResourceTransferAction.TransferType)GUILayout.SelectionGrid((int)selectedXfers[rsc].type, ResourceTransferEditor.resourceTransferTypeStrings, 3);
+                        if (GUILayout.Button(xferDirections[rsc] ? "To Origin" : "To Target"))
+                        {
+                            xferDirections[rsc] = !xferDirections[rsc];
+                        }
+
                         GUILayout.EndHorizontal();
 
                         try
@@ -141,22 +151,28 @@ namespace SupplyChain.UI
                 GUILayout.Label("No vessels available to transfer with.");
             }
 
-            if (GUILayout.Button("Accept"))
+            if (GUILayout.Button("Apply"))
             {
-                List<ResourceTransferAction.ResourceTransfer> xfers = new List<ResourceTransferAction.ResourceTransfer>();
+                List<ResourceTransferAction.ResourceTransfer> toOrigin = new List<ResourceTransferAction.ResourceTransfer>();
+                List<ResourceTransferAction.ResourceTransfer> toTarget = new List<ResourceTransferAction.ResourceTransfer>();
 
-                foreach(ResourceTransferAction.ResourceTransfer xfer in selectedXfers.Values)
+                foreach (ResourceTransferAction.ResourceTransfer xfer in selectedXfers.Values)
                 {
-                    xfers.Add(xfer);
+                    if(xferDirections[xfer.resourceID])
+                    {
+                        toOrigin.Add(xfer);
+                    } else
+                    {
+                        toTarget.Add(xfer);
+                    }
                 }
 
-                this.action.toTarget = xfers;
+                this.action.toTarget = toTarget;
+                this.action.toOrigin = toOrigin;
                 this.action.targetVessel = target;
-
-                return true;
             }
 
-            if (GUILayout.Button("Cancel"))
+            if (GUILayout.Button("Back"))
             {
                 return true;
             }

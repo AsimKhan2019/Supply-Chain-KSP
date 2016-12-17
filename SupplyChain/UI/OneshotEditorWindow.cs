@@ -140,7 +140,7 @@ namespace SupplyChain.UI
 
                     if (vd.orbitalDockingEnabled)
                     {
-                        if (GUILayout.Button("Transfer Resources from Vessel", UIStyle.passableStyle))
+                        if (GUILayout.Button("Transfer Resources to/from Vessel", UIStyle.passableStyle))
                         {
                             selectedTransfer = new ResourceTransferEditor(vd);
                             selectedLink = null;
@@ -148,7 +148,7 @@ namespace SupplyChain.UI
                     }
                     else
                     {
-                        GUILayout.Label("Transfer Resources from Vessel", UIStyle.impassableStyle);
+                        GUILayout.Label("Transfer Resources to/from Vessel", UIStyle.impassableStyle);
                     }
                 }
             }
