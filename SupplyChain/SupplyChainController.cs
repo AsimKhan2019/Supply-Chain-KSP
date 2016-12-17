@@ -62,9 +62,12 @@ namespace SupplyChain
                         act.finishAction();
                         finished.Add(act);
 
-                        foreach(Action<SupplyChainAction> callback in act.onComplete)
+                        if(act.onComplete != null)
                         {
-                            callback(act);
+                            foreach (Action<SupplyChainAction> callback in act.onComplete)
+                            {
+                                callback(act);
+                            }
                         }
                     }
                 }
