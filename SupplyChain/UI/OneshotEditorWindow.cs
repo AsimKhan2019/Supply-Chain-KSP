@@ -65,7 +65,7 @@ namespace SupplyChain.UI
             {
                 GUILayout.Label(
                     "Action In Progress...\n" +
-                    "T-"+UIStyle.formatTimespan(act.timeComplete - Planetarium.GetUniversalTime(), true),
+                    "T-"+UIStyle.formatTimespan(act.timeComplete - Planetarium.GetUniversalTime(), true) + " to completion",
                     UIStyle.activeStyle);
                 return false;
             } else

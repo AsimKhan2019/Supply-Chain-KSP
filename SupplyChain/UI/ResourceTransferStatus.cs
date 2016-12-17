@@ -35,12 +35,24 @@ namespace SupplyChain.UI
                 resourceNames += PartResourceLibrary.Instance.GetDefinition(xfer.resourceID).name;
             }
 
-            return GUILayout.Button("Resource Transfer: " +
-                action.linkVessel.vessel.name +
-                " -> " +
-                ((action.targetVessel != null && action.targetVessel.vessel != null) ? action.targetVessel.vessel.name : "[Unknown]") +
-                "\n(" + resourceNames + ")"
-            );
+            if (action.active)
+            {
+                return GUILayout.Button("Resource Transfer: " +
+                    action.linkVessel.vessel.name +
+                    " <-> " +
+                    ((action.targetVessel != null && action.targetVessel.vessel != null) ? action.targetVessel.vessel.name : "[Unknown]") +
+                    "\n(" + resourceNames + ")" +
+                    "\nT-" + UIStyle.formatTimespan(action.timeComplete - Planetarium.GetUniversalTime(), true) + " to completion"
+                );
+            } else
+            {
+                return GUILayout.Button("Resource Transfer: " +
+                    action.linkVessel.vessel.name +
+                    " <-> " +
+                    ((action.targetVessel != null && action.targetVessel.vessel != null) ? action.targetVessel.vessel.name : "[Unknown]") +
+                    "\n(" + resourceNames + ")"
+                );
+            }
         }
 
         private void displayResourceTransferType(ResourceTransferAction.ResourceTransfer xfer)

@@ -69,14 +69,16 @@ namespace SupplyChain.UI
             if(action.active)
             {
                 return GUILayout.Button(
-                    "Supply Link: " + action.location.name + " -> " + action.to.name +
-                    "\nT-" + UIStyle.formatTimespan(action.timeComplete - Planetarium.GetUniversalTime(), true),
+                    "Supply Link: " + action.linkVessel.vessel.name +
+                    "\n" + action.location.name + " -> " + action.to.name +
+                    "\nT-" + UIStyle.formatTimespan(action.timeComplete - Planetarium.GetUniversalTime(), true) + " to completion",
                     UIStyle.activeStyle
                 );
             } else
             {
                 return GUILayout.Button(
-                    "Supply Link: " + action.location.name + "\n-> " + action.to.name,
+                    "Supply Link: " + action.linkVessel.vessel.name +
+                    "\n" + action.location.name + "\n-> " + action.to.name,
                     (this.linkOverallStatus ? UIStyle.passableStyle : UIStyle.impassableLabelStyle)
                 );
             }
@@ -87,14 +89,14 @@ namespace SupplyChain.UI
             if (l.active)
             {
                 GUILayout.Label(
-                    l.location.name + " -> " + l.to.name +
+                    l.linkVessel.vessel.name + ":" + l.location.name + " -> " + l.to.name +
                     " (Active: T-" + UIStyle.formatTimespan(l.timeComplete - Planetarium.GetUniversalTime(), true) + ")",
                     UIStyle.activeStyle
                 );
             }
             else
             {
-                GUILayout.Label(l.location.name + " -> " + l.to.name);
+                GUILayout.Label(l.linkVessel.vessel.name + ":" + l.location.name + " -> " + l.to.name);
             }
         }
 
