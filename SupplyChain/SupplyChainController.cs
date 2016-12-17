@@ -35,8 +35,9 @@ namespace SupplyChain
 
             lastUpdated = Planetarium.GetUniversalTime();
 
-            GameEvents.OnFlightGlobalsReady.Add(updateVesselsAtPoint);
-            GameEvents.onTimeWarpRateChanged.Add( () => { updateVesselsAtPoint(); } );
+            GameEvents.onFlightReady.Add(doPeriodicUpdate);
+            GameEvents.OnFlightGlobalsReady.Add( (bool data) => { doPeriodicUpdate(); } );
+            GameEvents.onTimeWarpRateChanged.Add(doPeriodicUpdate);
 
             SupplyBaseWindow.initAllWindows();
         }
@@ -77,15 +78,16 @@ namespace SupplyChain
                     activeActions.Remove(act);
                 }
 
-                updateVesselsAtPoint();
+                doPeriodicUpdate();
                 SupplyBaseWindow.updateAllWindows();
 
                 lastUpdated = Planetarium.GetUniversalTime();
             }
         }
 
-        private void updateVesselsAtPoint(bool something = false)
+        private void doPeriodicUpdate()
         {
+            /* Update the vesselsAtPoint dictionary. */
             vesselsAtPoint.Clear();
 
             foreach (Vessel v in FlightGlobals.Vessels)
@@ -102,6 +104,12 @@ namespace SupplyChain
                         break;
                     }
                 }
+            }
+
+            /* Update all tracked vessels. */
+            foreach(VesselData vd in this.trackedVessels)
+            {
+                vd.periodicUpdate();
             }
         }
 

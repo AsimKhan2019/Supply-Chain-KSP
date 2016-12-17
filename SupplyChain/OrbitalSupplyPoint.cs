@@ -80,6 +80,9 @@ namespace SupplyChain
 
         public override void moveVesselToPoint(Vessel v)
         {
+            CelestialBody oldSOI = v.GetOrbitDriver().orbit.referenceBody;
+
+            /* Update driven orbit so the rest of KSP knows: */
             Orbit orb = v.GetOrbitDriver().orbit;
 
             orb.inclination = inc;
@@ -92,6 +95,24 @@ namespace SupplyChain
 
             orb.Init();
             orb.UpdateFromUT(Planetarium.GetUniversalTime());
+
+            /* Update the saved orbit so the rest of our code knows: */
+            OrbitSnapshot orbSnap = v.protoVessel.orbitSnapShot;
+
+            orbSnap.inclination = inc;
+            orbSnap.eccentricity = ecc;
+            orbSnap.semiMajorAxis = sma;
+            orbSnap.LAN = lan;
+            orbSnap.argOfPeriapsis = argP;
+            orbSnap.meanAnomalyAtEpoch = 0;
+            orbSnap.ReferenceBodyIndex = soi.flightGlobalsIndex;
+
+            if (oldSOI != soi)
+            {
+                GameEvents.onVesselSOIChanged.Fire(
+                    new GameEvents.HostedFromToAction<Vessel, CelestialBody>(v, oldSOI, soi)
+                );
+            }
         }
 
         public override void guiDisplayData(int id)

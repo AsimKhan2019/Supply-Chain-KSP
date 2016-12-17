@@ -38,8 +38,7 @@ namespace SupplyChain
             // Do we actually need to resolve vessel references on every scene switch?
             GameEvents.onGameSceneLoadRequested.Add((GameScenes s) => { this.resolved = false; });
 
-            GameEvents.onFlightReady.Add(this.periodicUpdate);
-            GameEvents.onTimeWarpRateChanged.Add(this.periodicUpdate);
+            
         }
 
         public VesselData(Vessel v)
