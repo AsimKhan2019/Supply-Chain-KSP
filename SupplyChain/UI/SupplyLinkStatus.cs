@@ -91,7 +91,7 @@ namespace SupplyChain.UI
                 GUILayout.Label(
                     l.linkVessel.vessel.name + ":" + l.location.name + " -> " + l.to.name +
                     " (Active: T-" + UIStyle.formatTimespan(l.timeComplete - Planetarium.GetUniversalTime(), true) + ")",
-                    UIStyle.activeStyle
+                    UIStyle.activeLabelStyle
                 );
             }
             else

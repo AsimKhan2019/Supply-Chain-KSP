@@ -35,11 +35,25 @@ namespace SupplyChain.UI
                 resourceNames += PartResourceLibrary.Instance.GetDefinition(xfer.resourceID).name;
             }
 
+            // indicates resource transfer direction
+            string arrow;
+
+            if(action.toOrigin.Count == 0 && action.toTarget.Count > 0)
+            {
+                arrow = " -> ";
+            } else if(action.toOrigin.Count > 0 && action.toTarget.Count == 0)
+            {
+                arrow = " <- ";
+            } else
+            {
+                arrow = " <-> ";
+            }
+
             if (action.active)
             {
                 return GUILayout.Button("Resource Transfer: " +
                     action.linkVessel.vessel.name +
-                    " <-> " +
+                    arrow +
                     ((action.targetVessel != null && action.targetVessel.vessel != null) ? action.targetVessel.vessel.name : "[Unknown]") +
                     "\n(" + resourceNames + ")" +
                     "\nT-" + UIStyle.formatTimespan(action.timeComplete - Planetarium.GetUniversalTime(), true) + " to completion"
@@ -48,7 +62,7 @@ namespace SupplyChain.UI
             {
                 return GUILayout.Button("Resource Transfer: " +
                     action.linkVessel.vessel.name +
-                    " <-> " +
+                    arrow +
                     ((action.targetVessel != null && action.targetVessel.vessel != null) ? action.targetVessel.vessel.name : "[Unknown]") +
                     "\n(" + resourceNames + ")"
                 );
@@ -84,9 +98,9 @@ namespace SupplyChain.UI
         {
             /* Basic data. */
             GUILayout.BeginVertical();
-            GUILayout.Label("From: " + action.linkVessel.vessel.name);
+            GUILayout.Label("Origin Vessel: " + action.linkVessel.vessel.name);
             GUILayout.Label(
-                "To: " +
+                "Target Vessel:" +
                 ((action.targetVessel != null && action.targetVessel.vessel != null) ? action.targetVessel.vessel.name : "[Unknown]"));
 
             if (action.active)
@@ -95,7 +109,9 @@ namespace SupplyChain.UI
             }
 
             GUILayout.EndVertical();
-            
+
+            GUILayout.Space(UIStyle.separatorSpacing);
+
             /* Resource transfers: */
             GUILayout.BeginVertical();
 
@@ -103,25 +119,30 @@ namespace SupplyChain.UI
             {
                 if (action.toTarget.Count == 0)
                 {
-                    GUILayout.Label("No resources transferred to target " + action.targetVessel.vessel.name + ".");
+                    GUILayout.Label("No resources transferred to target vessel.");
                 } else
                 {
-                    GUILayout.Label("Resources Transferred to Target " + action.targetVessel.vessel.name + ":");
+                    GUILayout.Label("Resources Transferred to Target Vessel: ", UIStyle.headingLabelStyle);
 
                     foreach (ResourceTransferAction.ResourceTransfer xfer in action.toTarget)
                     {
                         displayResourceTransferType(xfer);
                     }
                 }
-                    
             }
 
-            if(action.toOrigin.Count == 0)
+            GUILayout.EndVertical();
+
+            GUILayout.Space(UIStyle.separatorSpacing);
+
+            GUILayout.BeginVertical();
+
+            if (action.toOrigin.Count == 0)
             {
-                GUILayout.Label("No resources transferred to origin " + action.linkVessel.vessel.name + ".");
+                GUILayout.Label("No resources transferred to origin vessel.");
             } else
             {
-                GUILayout.Label("Resources Transferred to Origin " + action.linkVessel.vessel.name + ": ");
+                GUILayout.Label("Resources Transferred to Origin Vessel: ", UIStyle.headingLabelStyle);
                 foreach (ResourceTransferAction.ResourceTransfer xfer in action.toOrigin)
                 {
                     displayResourceTransferType(xfer);

@@ -158,6 +158,9 @@ namespace SupplyChain.UI
 
                 foreach (ResourceTransferAction.ResourceTransfer xfer in selectedXfers.Values)
                 {
+                    if (xfer.type == ResourceTransferAction.TransferType.TRANSFER_AMOUNT && xfer.amount < 1)
+                        continue;
+
                     if(xferDirections[xfer.resourceID])
                     {
                         toOrigin.Add(xfer);
