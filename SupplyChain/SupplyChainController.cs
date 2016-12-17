@@ -148,6 +148,19 @@ namespace SupplyChain
                 ConfigNode vessNode = node.AddNode("TrackedVessel");
                 v.Save(vessNode);
             }
+
+            if(activeActions.Exists( (SupplyChainAction act) => { return act.freestanding; } ))
+            {
+                Debug.Log("[SupplyChain] Saving active actions...");
+                foreach(SupplyChainAction act in activeActions)
+                {
+                    if(act.freestanding)
+                    {
+                        ConfigNode actNode = node.AddNode("ActiveAction");
+                        act.Save(actNode);
+                    }
+                }
+            }
         }
 
         public override void OnLoad(ConfigNode node)
@@ -209,6 +222,22 @@ namespace SupplyChain
                         activeActions.Add(link);
                     }
                     Debug.Log("[SupplyChain] Loaded Supply Link: " + link.location.name + " -> " + link.to.name);
+                }
+            }
+
+            ConfigNode[] actNodes = node.GetNodes("ActiveAction");
+            if(actNodes.Count() > 0)
+            {
+                Debug.Log("[SupplyChain] Loading active actions...");
+                foreach (ConfigNode actNode in actNodes)
+                {
+                    string type = actNode.GetValue("type");
+                    if (type == "ResourceTransfer")
+                    {
+                        ResourceTransferAction act = new ResourceTransferAction();
+                        act.Load(actNode);
+                        this.activeActions.Add(act);
+                    }
                 }
             }
         }
@@ -295,7 +324,7 @@ namespace SupplyChain
 
         public static VesselData getVesselTrackingInfo(Guid trackingID)
         {
-            return SupplyChainController.instance.trackedVessels.Find((VesselData vd) => { return (vd.vesselID.Equals(trackingID)); });
+            return SupplyChainController.instance.trackedVessels.Find((VesselData vd) => { return (vd.trackingID.Equals(trackingID)); });
         }
 
         public static bool isVesselTracked(Vessel v)

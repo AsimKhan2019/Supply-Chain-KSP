@@ -34,6 +34,7 @@ namespace SupplyChain
             List<ResourceTransfer> toOrigin, List<ResourceTransfer> toTarget)
         {
             this.linkVessel = origin;
+            this.location = origin.currentLocation;
             this.targetVessel = target;
 
             this.timeRequired = 3600; // 1 hour
@@ -47,6 +48,7 @@ namespace SupplyChain
         public ResourceTransferAction(VesselData origin)
         {
             this.linkVessel = origin;
+            this.location = origin.currentLocation;
             this.timeRequired = 3600;
 
             this.toTarget = new List<ResourceTransfer>();
@@ -56,6 +58,8 @@ namespace SupplyChain
         public ResourceTransferAction()
         {
             this.timeRequired = 3600;
+            this.toTarget = new List<ResourceTransfer>();
+            this.toOrigin = new List<ResourceTransfer>();
         }
 
         private void calculateRequirements()
@@ -81,7 +85,7 @@ namespace SupplyChain
         }
         public override bool canExecute()
         {
-            if(targetVessel == null || targetVessel.vessel == null)
+            if(targetVessel == null || targetVessel.vessel == null || this.location == null)
             {
                 return false;
             }
@@ -206,10 +210,8 @@ namespace SupplyChain
             }
         }
 
-        public override void Load(ConfigNode node)
+        public override void LoadCustom(ConfigNode node)
         {
-            this.linkVessel = SupplyChainController.getVesselTrackingInfo(new Guid(node.GetValue("origin")));
-
             bool targetTracked = false;
             node.TryGetValue("targetTracked", ref targetTracked);
 
@@ -236,7 +238,7 @@ namespace SupplyChain
 
                 string destination = xferNode.GetValue("destination");
 
-                xferNode.TryGetValue("resourceID", ref xfer.resourceID);
+                xfer.resourceID = PartResourceLibrary.Instance.GetDefinition(xferNode.GetValue("resource")).id;
                 xferNode.TryGetValue("amount", ref xfer.amount);
 
                 int xferType = 0;
@@ -259,15 +261,14 @@ namespace SupplyChain
             calculateRequirements();
         }
 
-        public override void Save(ConfigNode node)
+        public override void SaveCustom(ConfigNode node)
         {
-            /* Save vessel IDs first.
-             * The target VesselData might not be registered with SupplyChainController,
-             * so check for that. */
             node.AddValue("type", "ResourceTransfer");
 
-            node.AddValue("origin", this.linkVessel.trackingID.ToString());
-            if(targetVessel == null || targetVessel.vessel == null)
+            /* Save target vessel ID first.
+             * The target VesselData might not be registered with SupplyChainController,
+             * so check for that. */
+            if (targetVessel == null || targetVessel.vessel == null)
             {
                 node.AddValue("targetTracked", false);
                 node.AddValue("target", "none");
@@ -289,7 +290,7 @@ namespace SupplyChain
             foreach(ResourceTransfer xfer in this.toOrigin) {
                 ConfigNode xferNode = node.AddNode("Transfer");
                 xferNode.AddValue("destination", "origin");
-                xferNode.AddValue("resourceID", xfer.resourceID);
+                xferNode.AddValue("resource", PartResourceLibrary.Instance.GetDefinition(xfer.resourceID).name);
                 xferNode.AddValue("amount", xfer.amount);
                 xferNode.AddValue("type", (int)xfer.type);
             }
@@ -298,10 +299,11 @@ namespace SupplyChain
             {
                 ConfigNode xferNode = node.AddNode("Transfer");
                 xferNode.AddValue("destination", "target");
-                xferNode.AddValue("resourceID", xfer.resourceID);
+                xferNode.AddValue("resource", PartResourceLibrary.Instance.GetDefinition(xfer.resourceID).name);
                 xferNode.AddValue("amount", xfer.amount);
                 xferNode.AddValue("type", (int)xfer.type);
             }
+            
         }
     }
 }

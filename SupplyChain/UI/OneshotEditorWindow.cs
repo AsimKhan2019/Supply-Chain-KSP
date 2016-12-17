@@ -140,7 +140,7 @@ namespace SupplyChain.UI
                         }
                     }
 
-                    if (vd.orbitalDockingEnabled)
+                    if (vd.orbitalDockingEnabled && vd.currentLocation != null)
                     {
                         if (GUILayout.Button("Transfer Resources to/from Vessel", UIStyle.passableStyle))
                         {

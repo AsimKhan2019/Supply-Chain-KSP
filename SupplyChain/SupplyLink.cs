@@ -24,9 +24,14 @@ namespace SupplyChain
             }
         }
 
-        public SupplyLink() {}
+        public SupplyLink() {
+            this.freestanding = false;
+        }
+
         public SupplyLink(VesselData v, SupplyPoint from, SupplyPoint to)
         {
+            this.freestanding = false;
+
             this.id = Guid.NewGuid();
             this.location = from;
             this.to = to;
@@ -110,26 +115,12 @@ namespace SupplyChain
             return true;
         }
 
-        public override void Load(ConfigNode node)
+        public override void LoadCustom(ConfigNode node)
         {
             id = new Guid(node.GetValue("id"));
-            location = SupplyChainController.getPointByGuid(new Guid(node.GetValue("from")));
             to = SupplyChainController.getPointByGuid(new Guid(node.GetValue("to")));
-            node.TryGetValue("timeRequired", ref timeRequired);
             node.TryGetValue("maxMass", ref maxMass);
-
-            /* Load linked vessel. */
-            linkVesselID = new Guid(node.GetValue("linkVessel"));
-            foreach(VesselData vd in SupplyChainController.instance.trackedVessels)
-            {
-                if(vd.trackingID.Equals(linkVesselID))
-                {
-                    this.linkVessel = vd;
-                    vd.links.Add(this);
-                    break;
-                }
-            }
-
+            
             /* Load resources. */
             ConfigNode[] required = node.GetNodes("RequiredResource");
             resourcesRequired = new Dictionary<int, double>();
@@ -140,22 +131,13 @@ namespace SupplyChain
                 resourcesRequired.Add(PartResourceLibrary.Instance.GetDefinition(name).id, amount);
             }
 
-            node.TryGetValue("active", ref active);
-            if(this.active)
-            {
-                node.TryGetValue("timeAtComplete", ref timeComplete);
-            }
+            this.linkVessel.links.Add(this);
         }
 
-        public override void Save(ConfigNode node)
+        public override void SaveCustom(ConfigNode node)
         {
             node.AddValue("id", id.ToString());
-            node.AddValue("from", location.id.ToString());
             node.AddValue("to", to.id.ToString());
-            
-            node.AddValue("linkVessel", linkVessel.trackingID);
-            
-            node.AddValue("timeRequired", timeRequired);
             node.AddValue("maxMass", maxMass);
             if (resourcesRequired != null)
             {
@@ -165,12 +147,6 @@ namespace SupplyChain
                     rscNode.AddValue("name", PartResourceLibrary.Instance.GetDefinition(rsc).name);
                     rscNode.AddValue("amount", resourcesRequired[rsc]);
                 }
-            }
-
-            node.AddValue("active", this.active);
-            if(this.active)
-            {
-                node.AddValue("timeAtComplete", this.timeComplete);
             }
         }
     }
