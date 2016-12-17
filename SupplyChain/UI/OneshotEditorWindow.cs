@@ -97,6 +97,7 @@ namespace SupplyChain.UI
 
                 if (selectedLink != null && drawActionFireButton(selectedLink.action))
                 {
+                    selectedLink.action.startAction();
                     selectedLink = null;
                 }
             } else if(selectedTransfer != null)
@@ -108,6 +109,7 @@ namespace SupplyChain.UI
 
                 if(selectedTransfer != null && drawActionFireButton(selectedTransfer.action))
                 {
+                    selectedTransfer.action.startAction();
                     selectedTransfer = null;
                 }
             } else

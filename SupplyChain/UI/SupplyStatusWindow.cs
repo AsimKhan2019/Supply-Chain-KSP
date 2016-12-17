@@ -201,21 +201,22 @@ namespace SupplyChain.UI
                 }
             }
 
-            foreach (ActionStatusView v in activeActionViews)
+            foreach (ActionStatusView v in toRemove)
             {
                 activeActionViews.Remove(v);
             }
+            
 
             /* Add newly active views. */
             foreach (SupplyChainAction activeAction in SupplyChainController.instance.activeActions)
             {
-                if (!activeActionViews.Exists((ActionStatusView v) => { return v.action.Equals(activeAction); }))
+                if (!activeActionViews.Exists((ActionStatusView v) => { return v.action == activeAction; }))
                 {
                     activeActionViews.Add(ActionStatusView.getActionDetailsView(activeAction));
                 }
             }
-
-            foreach(ActionStatusView view in activeActionViews)
+            
+            foreach (ActionStatusView view in activeActionViews)
             {
                 view.onUpdate();
             }
