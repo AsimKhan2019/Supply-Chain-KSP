@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using SupplyChain.Sequencing;
 
 namespace SupplyChain
 {
@@ -23,9 +24,14 @@ namespace SupplyChain
 
         public SupplyPoint currentLocation;
 
+        public bool vesselLocked = false;
+        private Queue<ISchedulable> lockQueue;
+        private ISchedulable lockingProc;
+
         public VesselData()
         {
             this.links = new List<SupplyLink>();
+            this.lockQueue = new Queue<ISchedulable>();
             
             GameEvents.onPartUndock.Add(
                 (Part p) => { handleDockingEvent(p, false); }
@@ -43,6 +49,8 @@ namespace SupplyChain
 
         public VesselData(Vessel v)
         {
+            this.lockQueue = new Queue<ISchedulable>();
+
             this.vesselRef = v;
             this.linkedID = v.id;
             if (v.loaded)
@@ -627,6 +635,34 @@ namespace SupplyChain
                     this.currentLocation = pt;
                     break;
                 }
+            }
+        }
+
+        /* Takes the lock for this vessel.
+         * Callers need to call this, halt, and wait on their onLockTaken functions to be called.
+         */
+        public void lockVessel(ISchedulable proc)
+        {
+            if(vesselLocked)
+            {
+                lockQueue.Enqueue(proc);
+            } else
+            {
+                vesselLocked = true;
+                proc.onLockTaken(this);
+            }
+        }
+
+        public void unlockVessel(ISchedulable proc)
+        {
+            Debug.Assert(proc == lockingProc, "[SupplyChain] VesselData: lock/unlock process mismatch!");
+            if(lockQueue.Count > 0)
+            {
+                lockingProc = lockQueue.Dequeue();
+                lockingProc.onLockTaken(this);
+            } else
+            {
+                vesselLocked = false;
             }
         }
 

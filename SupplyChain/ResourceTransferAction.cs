@@ -37,6 +37,7 @@ namespace SupplyChain
             this.location = origin.currentLocation;
             this.targetVessel = target;
 
+            this.onComplete = new List<Action<SupplyChainAction>>();
             this.timeRequired = 3600; // 1 hour
 
             this.toTarget = toTarget;
@@ -50,6 +51,7 @@ namespace SupplyChain
             this.linkVessel = origin;
             this.location = origin.currentLocation;
             this.timeRequired = 3600;
+            this.onComplete = new List<Action<SupplyChainAction>>();
 
             this.toTarget = new List<ResourceTransfer>();
             this.toOrigin = new List<ResourceTransfer>();
@@ -60,6 +62,7 @@ namespace SupplyChain
             this.timeRequired = 3600;
             this.toTarget = new List<ResourceTransfer>();
             this.toOrigin = new List<ResourceTransfer>();
+            this.onComplete = new List<Action<SupplyChainAction>>();
         }
 
         private void calculateRequirements()

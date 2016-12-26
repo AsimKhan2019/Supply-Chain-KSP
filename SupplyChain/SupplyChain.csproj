@@ -46,10 +46,11 @@
   <ItemGroup>
     <Compile Include="ResourceTransferAction.cs" />
     <Compile Include="OrbitalSupplyPoint.cs" />
-    <Compile Include="SequenceCondition.cs" />
+    <Compile Include="Sequencing\SequenceCondition.cs" />
+    <Compile Include="Sequencing\ISchedulable.cs" />
     <Compile Include="StateTracker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ActionSequence.cs" />
+    <Compile Include="Sequencing\SupplyChainProcess.cs" />
     <Compile Include="SupplyChainAction.cs" />
     <Compile Include="SupplyChainController.cs" />
     <Compile Include="UI\ActionEditorView.cs" />

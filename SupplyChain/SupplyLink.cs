@@ -26,11 +26,13 @@ namespace SupplyChain
 
         public SupplyLink() {
             this.freestanding = false;
+            this.onComplete = new List<Action<SupplyChainAction>>();
         }
 
         public SupplyLink(VesselData v, SupplyPoint from, SupplyPoint to)
         {
             this.freestanding = false;
+            this.onComplete = new List<Action<SupplyChainAction>>();
 
             this.id = Guid.NewGuid();
             this.location = from;

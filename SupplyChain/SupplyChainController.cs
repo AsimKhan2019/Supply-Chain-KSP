@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using SupplyChain.UI;
+using SupplyChain.Sequencing;
 
 namespace SupplyChain
 {
@@ -14,7 +15,9 @@ namespace SupplyChain
         public List<SupplyPoint> points;
         public List<SupplyLink> links;
         public List<VesselData> trackedVessels;
+
         public List<SupplyChainAction> activeActions;
+        public List<SupplyChainProcess> allProcesses;
 
         public static SupplyChainController instance;
 
@@ -80,6 +83,11 @@ namespace SupplyChain
 
                 doPeriodicUpdate();
                 SupplyBaseWindow.updateAllWindows();
+
+                foreach(SupplyChainProcess proc in allProcesses)
+                {
+                    proc.schedulerUpdate();
+                }
 
                 lastUpdated = Planetarium.GetUniversalTime();
             }
